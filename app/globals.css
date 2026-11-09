@@ -175,3 +175,19 @@ body{background:var(--bg);color:var(--ink);font-synthesis:none}
 .admin-modal h2{color:#dffff0;font-size:22px}.admin-modal p{font-size:12px;color:#aac1b4}
 @media(max-width:1050px){.admin-stat-grid{grid-template-columns:repeat(2,1fr)}.admin-campaign-grid{grid-template-columns:1fr}}
 @media(max-width:550px){.admin-stat-grid{gap:8px}.admin-stat{padding:14px;min-height:115px}.admin-form-cols{grid-template-columns:1fr}.admin-pager{flex-direction:column;align-items:start}}
+
+/* MotoPRO V3.5: confirmação visual de Pix apenas após status aprovado no backend. */
+.pix-approved{border:1px solid #2cb67a;border-radius:19px;background:linear-gradient(155deg,#0c3e2c 0%,#10271f 90%);color:#d6ffeb;box-shadow:0 14px 37px #00cc7730;margin:0 0 16px;padding:26px 20px;display:flex;align-items:center;flex-direction:column;text-align:center;gap:9px;animation:pix-success-enter .4s ease-out}
+.pix-approved-mark{width:84px;height:84px;border-radius:50%;background:#2fe4a1;color:#063622;display:grid;place-items:center;margin-bottom:5px;box-shadow:0 0 0 8px #2fe4a125}
+.pix-approved>strong{font:750 23px Outfit, sans-serif;color:#baffd9}
+.pix-approved>span{font-size:13px;line-height:1.55;color:#caf5dc}
+.pix-approved>small{font-size:11px;color:#a5d5bb}
+.pix-approved-validity{display:flex;gap:9px;align-items:center;justify-content:center;padding:10px 12px;margin:7px 0;background:#21593c;border:1px solid #367b55;border-radius:12px;font-size:12px;font-weight:800;color:#e5fff2}
+.pix-awaiting{display:flex;align-items:flex-start;gap:12px;background:#142920;border:1px solid #3a654c;padding:16px;border-radius:14px}
+.pix-awaiting svg{flex-shrink:0;color:#71dfb0;margin-top:2px}
+.pix-awaiting strong{display:block;color:#d7f7e5;font-size:13px}
+.pix-awaiting small{display:block;color:#a1c8b1;font-size:12px;line-height:1.5;margin-top:5px}
+.pix-clock{animation:pix-clock-pulse 2s ease-in-out infinite}
+@keyframes pix-success-enter{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes pix-clock-pulse{50%{opacity:.4}}
+@media(prefers-reduced-motion:reduce){.pix-approved,.pix-clock{animation:none}}
