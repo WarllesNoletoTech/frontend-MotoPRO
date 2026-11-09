@@ -277,3 +277,30 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .pix-awaiting{margin:0 0 14px}
 .pix-approved{margin-bottom:18px}
 @media(max-width:650px){.pix-result.pix-result-prominent{padding:15px}.pix-result-prominent>img{width:min(100%,230px)}}
+
+
+/* MotoPRO V3.14 — status financeiros padronizados: aprovado verde,
+   cancelado/recusado/estornado vermelho, pendente/aguardando amarelo.
+   Aplicado ao Financeiro, Assinaturas e ao fluxo Pix. */
+.billing-status{display:inline-flex;align-items:center;gap:7px;border-radius:999px;
+  padding:5px 10px;border:1px solid;font-size:11px;font-weight:800;white-space:nowrap;line-height:1.3}
+.billing-status-dot{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:currentColor}
+.billing-status--approved{color:#91f3bc;background:#153727;border-color:#2b8557}
+.billing-status--pending{color:#ffd574;background:#382d15;border-color:#936b29}
+.billing-status--canceled{color:#ffb1b1;background:#3d1c22;border-color:#a84b54}
+.billing-status--neutral{color:#d1c2ab;background:#2a2620;border-color:#544b3e}
+/* Situações de conta também mantêm cores semânticas. */
+.admin-status.good{color:#91f3bc;background:#153727;border-color:#2b8557}
+.admin-status.bad{color:#ffb1b1;background:#3d1c22;border-color:#a84b54}
+/* Aguardando Pix segue amarelo, confirmação permanece verde. */
+.pix-awaiting{background:#382d15;border-color:#936b29}
+.pix-awaiting strong,.pix-awaiting svg{color:#ffd574}
+.pix-awaiting small{color:#f0d4a1}
+.pix-approved{border-color:#2b8557}
+.renewal-alert.active{border-color:#2b8557;background:#173527;color:#aeffd2}
+.renewal-alert.expiring{border-color:#936b29;background:#382d15;color:#ffd574}
+.renewal-alert.expired{border-color:#a84b54;background:#3d1c22;color:#ffb1b1}
+.pix-subscription-prompt.expired{border-color:#a84b54;background:#3d1c22;color:#ffd6d6}
+.pix-subscription-prompt.expired>svg{color:#ffb1b1}
+.pix-subscription-prompt.expiring{border-color:#936b29;background:#382d15;color:#ffd574}
+@media(max-width:650px){.billing-status{white-space:normal;padding:5px 8px}}
