@@ -4,6 +4,7 @@ import Link from 'next/link';
 import {usePathname,useRouter} from 'next/navigation';
 import {LayoutDashboard,ReceiptText,Mic2,Bike,Target,Plug,ShieldCheck,LogOut,Settings,Gift,ChevronRight,LoaderCircle,Menu,X,Wallet,CalendarClock,LockKeyhole,QrCode} from 'lucide-react';
 import {api} from '@/lib/api';
+import {readBillingStatus} from '@/lib/billingContract';
 const navigation=[
  {href:'/app',label:'Visão geral',Icon:LayoutDashboard},
  {href:'/app/lancamentos',label:'Lançamentos',Icon:ReceiptText},
@@ -23,7 +24,7 @@ export default function ProtectedShell({children}:{children:React.ReactNode}){
  const [notices,setNotices]=useState<{announcement:string;maintenanceNotice:string}|null>(null);
  const [premiumAlert,setPremiumAlert]=useState<{status:string;title:string;message:string;activeUntil:string|null}|null>(null);
  const [premiumAccess,setPremiumAccess]=useState<{premiumRequired:boolean;allowed:boolean;priceCents:number}|null>(null);
- const [accessError,setAccessError]=useState(false);
+ const [accessError,setAccessError]=useState('');
  const [generatingPix,setGeneratingPix]=useState(false);
  const [pixError,setPixError]=useState('');
  const pathname=usePathname();const router=useRouter();
@@ -32,14 +33,14 @@ export default function ProtectedShell({children}:{children:React.ReactNode}){
  useEffect(()=>{api<{announcement:string;maintenanceNotice:string}>('/public/settings').then(setNotices).catch(()=>{});},[]);
  useEffect(()=>{
   if(!user){setPremiumAccess(null);return;}
-  if(user.role==='admin'){setPremiumAlert(null);setPremiumAccess({premiumRequired:false,allowed:true,priceCents:999});setAccessError(false);return;}
-  setPremiumAccess(null);setAccessError(false);
+  if(user.role==='admin'){setPremiumAlert(null);setPremiumAccess({premiumRequired:false,allowed:true,priceCents:999});setAccessError('');return;}
+  setPremiumAccess(null);setAccessError('');
   let valid=true;
   const check=async()=>{
    try{
-    const r=await api<{notice:{status:string;title:string;message:string;activeUntil:string|null};plan:{priceCents:number};access:{premiumRequired:boolean;allowed:boolean}}>('/billing/me');
-    if(valid){setPremiumAlert(['expiring','expired','none'].includes(r.notice.status)?r.notice:null);setPremiumAccess({...r.access,priceCents:r.plan.priceCents});setAccessError(false);}
-   }catch{if(valid){setPremiumAlert(null);setPremiumAccess(null);setAccessError(true);}}
+    const r=readBillingStatus(await api<unknown>('/billing/me'));
+    if(valid){setPremiumAlert(['expiring','expired','none'].includes(r.notice.status)?r.notice:null);setPremiumAccess({...r.access,priceCents:r.plan.priceCents});setAccessError('');}
+   }catch(e){if(valid){setPremiumAlert(null);setPremiumAccess(null);setAccessError(e instanceof Error?e.message:'Não foi possível consultar sua assinatura.');}}
   };
   void check();
   const timer=window.setInterval(()=>{if(document.visibilityState==='visible')void check();},5*60*1000);
@@ -86,7 +87,7 @@ export default function ProtectedShell({children}:{children:React.ReactNode}){
   </aside>
   <div className="app-main">
    <header className="topbar"><button aria-label="Abrir menu" className="mobile-menu-btn icon-btn" onClick={()=>setMenuOpen(v=>!v)}>{menuOpen?<X/>:<Menu/>}</button><div className="topbar-eyebrow">SEU CORRE, SEU RESULTADO</div><div className="topbar-right"><span className="online-dot"/> Minha conta <span className="mini-avatar">{user.name.charAt(0).toUpperCase()}</span></div></header>
-   <main className="page-wrap">{premiumAlert&&<Link href="/app/assinatura" className={`renewal-shell-banner ${premiumAlert.status}`}><CalendarClock size={20}/><span><strong>{premiumAlert.title}</strong><small>{premiumAlert.message} Toque para renovar pelo Pix.</small></span><ChevronRight size={18}/></Link>}{notices?.maintenanceNotice&&<div className="notice info" style={{marginBottom:14}}>{notices.maintenanceNotice}</div>}{notices?.announcement&&<div className="notice success" style={{marginBottom:14}}>{notices.announcement}</div>}{accessError&&!accountPages&&user.role!=='admin'?<section className="premium-gate" role="alert"><div className="premium-gate-symbol"><LockKeyhole/></div><h1>Não foi possível consultar sua assinatura</h1><p>A conexão com o servidor falhou. Isso não significa que seu Premium venceu. Confira seu pagamento ou tente consultar novamente.</p><Link className="btn wide" href="/app/assinatura"><QrCode size={18}/> Ver assinatura e gerar Pix</Link><button className="premium-gate-retry" onClick={()=>window.location.reload()}>Tentar verificar novamente</button></section>:verifyingAccess?<div className="loading-page"><LoaderCircle className="spin"/> Verificando assinatura...</div>:premiumBlocked?<section className="premium-gate" role="status" aria-live="polite"><div className="premium-gate-symbol"><LockKeyhole size={36}/></div><h1>{gateTitle}</h1><p>{gateDescription}</p><div className="premium-gate-price">{new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format((premiumAccess?.priceCents??999)/100)} <span>/ 7 dias via Pix</span></div><button className="btn wide" onClick={()=>void generatePix()} disabled={generatingPix}><QrCode size={18}/> {generatingPix?'Gerando seu Pix...':gateExpired?'Gerar Pix para renovar':'Gerar Pix para ativar'}</button>{pixError&&<div className="premium-gate-error" role="alert">{pixError}</div>}<Link className="premium-gate-secondary" href="/app/assinatura">Ver assinatura, QR Code e pagamentos</Link><Link className="premium-gate-secondary" href="/app/configuracoes">Minha conta e meus dados</Link></section>:children}</main>
+   <main className="page-wrap">{premiumAlert&&<Link href="/app/assinatura" className={`renewal-shell-banner ${premiumAlert.status}`}><CalendarClock size={20}/><span><strong>{premiumAlert.title}</strong><small>{premiumAlert.message} Toque para renovar pelo Pix.</small></span><ChevronRight size={18}/></Link>}{notices?.maintenanceNotice&&<div className="notice info" style={{marginBottom:14}}>{notices.maintenanceNotice}</div>}{notices?.announcement&&<div className="notice success" style={{marginBottom:14}}>{notices.announcement}</div>}{accessError&&!accountPages&&user.role!=='admin'?<section className="premium-gate" role="alert"><div className="premium-gate-symbol"><LockKeyhole/></div><h1>Não foi possível consultar sua assinatura</h1><p>A verificação da assinatura não foi concluída. Isso não significa que seu Premium venceu. Você pode consultar o pagamento ou tentar novamente.</p>{accessError.includes('API do Heroku')&&<div className="premium-gate-error" role="alert">{accessError}</div>}<Link className="btn wide" href="/app/assinatura"><QrCode size={18}/> Ver assinatura e gerar Pix</Link><button className="premium-gate-retry" onClick={()=>window.location.reload()}>Tentar verificar novamente</button></section>:verifyingAccess?<div className="loading-page"><LoaderCircle className="spin"/> Verificando assinatura...</div>:premiumBlocked?<section className="premium-gate" role="status" aria-live="polite"><div className="premium-gate-symbol"><LockKeyhole size={36}/></div><h1>{gateTitle}</h1><p>{gateDescription}</p><div className="premium-gate-price">{new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format((premiumAccess?.priceCents??999)/100)} <span>/ 7 dias via Pix</span></div><button className="btn wide" onClick={()=>void generatePix()} disabled={generatingPix}><QrCode size={18}/> {generatingPix?'Gerando seu Pix...':gateExpired?'Gerar Pix para renovar':'Gerar Pix para ativar'}</button>{pixError&&<div className="premium-gate-error" role="alert">{pixError}</div>}<Link className="premium-gate-secondary" href="/app/assinatura">Ver assinatura, QR Code e pagamentos</Link><Link className="premium-gate-secondary" href="/app/configuracoes">Minha conta e meus dados</Link></section>:children}</main>
   </div>
   <nav className="mobile-bottom-nav">{navigation.slice(0,5).map(({href,label,Icon})=><Link key={href} href={href} className={pathname===href?'selected':''}><Icon size={20}/><span>{label==='Visão geral'?'Início':label==='Lançamentos'?'Ganhos':label}</span></Link>)}</nav>
  </div>;

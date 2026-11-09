@@ -3,8 +3,9 @@ import {useCallback,useEffect,useState} from 'react';
 import {QrCode,ShieldCheck,RotateCcw,Crown,Copy,Check,CheckCircle2,Clock3,CalendarClock,AlertCircle} from 'lucide-react';
 import {PageHeader,Panel,Notice,Loading} from '@/components/UI';
 import {api} from '@/lib/api';
+import {readBillingStatus,type BillingStatus} from '@/lib/billingContract';
 
-type Status={renewalAllowed:boolean;notice:{status:'none'|'active'|'expiring'|'expired'|'trial'|'courtesy';title:string;message:string;activeUntil:string|null;remainingDays:number|null;renewalAllowed:boolean};latestPix:null|{id:string;status:'pending'|'approved'|'rejected'|'refunded'|'canceled';amountCents:number;paidAt?:string|null};courtesyUntil?:string|null;plan:{priceCents:number;frequency:number;frequencyUnit:string;pixAutomaticAvailable:boolean};billingEnabled:boolean;subscription:null|{method:'pix'|'credit';status:string;activeUntil?:string;active:boolean;cancelAtPeriodEnd:boolean};pendingPix:null|{id:string;code?:string;qrCodeBase64?:string;ticketUrl?:string;expiresAt?:string}};
+type Status=BillingStatus;
 const money=(cents:number)=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(cents/100);
 export default function SubscriptionPage(){
  const [state,setState]=useState<Status|null>(null);
@@ -14,8 +15,8 @@ export default function SubscriptionPage(){
  const [message,setMessage]=useState('');
  const [copied,setCopied]=useState(false);
  const [benefits,setBenefits]=useState<string[]>([]);
- const load=useCallback(async()=>{setLoading(true);try{setState(await api<Status>('/billing/me'));setError('');}catch(e){setError(e instanceof Error?e.message:'Falha ao obter assinatura');}finally{setLoading(false);}},[]);
- useEffect(()=>{void load();api<{premiumBenefits:string[]}>('/public/settings').then(r=>setBenefits(r.premiumBenefits)).catch(()=>{});},[load]);
+ const load=useCallback(async()=>{setLoading(true);try{setState(readBillingStatus(await api<unknown>('/billing/me')));setError('');}catch(e){setState(null);setError(e instanceof Error?e.message:'Falha ao obter assinatura');}finally{setLoading(false);}},[]);
+ useEffect(()=>{void load();api<{premiumBenefits?:unknown}>('/public/settings').then(r=>setBenefits(Array.isArray(r.premiumBenefits)?r.premiumBenefits.filter((item):item is string=>typeof item==='string'):[])).catch(()=>setBenefits([]));},[load]);
  // Enquanto houver Pix pendente, o frontend consulta a API periodicamente.
  // O backend consulta o Mercado Pago e confere valor, referência e status antes de aprovar.
  useEffect(()=>{
@@ -34,7 +35,7 @@ export default function SubscriptionPage(){
    inFlight=true;
    try{
     await api<{ok:boolean}>('/billing/refresh',{method:'POST'});
-    const updated=await api<Status>('/billing/me');
+    const updated=readBillingStatus(await api<unknown>('/billing/me'));
     if(!stopped){
      setState(updated);
      if(updated.latestPix?.status==='approved')setMessage('');
@@ -60,7 +61,7 @@ export default function SubscriptionPage(){
   setError('');setMessage('');setBusy(path);
   try{
    await api<unknown>(path,{method:'POST'});
-   const updated=await api<Status>('/billing/me');
+   const updated=readBillingStatus(await api<unknown>('/billing/me'));
    setState(updated);
    if(path==='/billing/pix')setMessage('Pix gerado. A confirmação será verificada automaticamente.');
    else if(path==='/billing/refresh' && updated.latestPix?.status==='pending')setMessage('Pagamento ainda pendente. Vamos continuar verificando automaticamente.');
@@ -71,7 +72,7 @@ export default function SubscriptionPage(){
  const pendingPix=state?.pendingPix && state.latestPix?.status==='pending' ? state.pendingPix:null;
  const expiredPix=!!pendingPix?.expiresAt && new Date(pendingPix.expiresAt).getTime()<=Date.now();
  return <><PageHeader eyebrow="MOTOPRO PREMIUM" title="Sua assinatura" description="Acesso Premium por 7 dias após cada Pix confirmado. Acompanhe pagamentos e validade." />
- {!state?(loading?<Loading/>:<section className="premium-gate" role="alert"><div className="premium-gate-symbol"><AlertCircle size={34}/></div><h2>Não foi possível consultar seu pagamento</h2><p>O sistema não conseguiu verificar sua assinatura agora. Isso não significa que ela venceu. Tente novamente para consultar o status ou gerar seu Pix.</p>{error&&<div className="premium-gate-error">{error}</div>}<button className="btn wide" onClick={()=>void load()}><RotateCcw size={17}/> Tentar novamente</button></section>):<div className="two-col">
+ {!state?(loading?<Loading/>:<section className="premium-gate" role="alert"><div className="premium-gate-symbol"><AlertCircle size={34}/></div><h2>Não foi possível consultar seu pagamento</h2><p>Não foi possível confirmar sua assinatura. Isso não significa que ela venceu. Caso o problema seja uma atualização pendente no Heroku, o administrador deverá publicar o backend compatível antes de tentar novamente.</p>{error&&<div className="premium-gate-error">{error}</div>}<button className="btn wide" onClick={()=>void load()}><RotateCcw size={17}/> Tentar novamente</button></section>):<div className="two-col">
   <Panel title="Premium" subtitle="Ferramentas adicionais para entregadores">
    <div className="payment-price">{money(state.plan.priceCents)} <span>/ semana</span></div>
    <div style={{margin:'12px 0 20px',fontSize:13,color:'var(--muted)'}}>Cada pagamento Pix confirmado concede 7 dias de Premium. Renovação manual, sem débito automático.</div>
