@@ -89,7 +89,7 @@ export default function AdminPage(){
       {label:'Contas bloqueadas',value:String(overview.blockedUsers),Icon:Ban}
     ].map(({label,value,Icon})=><div key={label} className="admin-stat"><Icon size={18}/><small>{label}</small><strong>{value}</strong></div>)}</div>
     <div className="two-col"><Panel title="Assinaturas e cortesias" subtitle="Indicadores operacionais"><p><b>{overview.activeCourtesy}</b> contas com cortesia vigente</p><p><b>{overview.approvedPayments}</b> pagamentos Pix aprovados registrados</p><p>Plano para novas adesões: <b>{formatMoney(overview.weeklyPriceCents)} / 7 dias</b></p><p>Pagamento real: <b>{overview.billingEnabled?'Habilitado':'Em homologação / desabilitado'}</b></p></Panel><Panel title="Campanhas de premiação" subtitle="Preparação responsável"><p>{overview.monthlyCampaign.message}</p><p className="admin-small">Não há seleção aleatória nem cobrança vinculada à participação em sorteios.</p></Panel></div>
-    <p className="admin-small">Os valores incluem apenas pagamentos que constam como aprovados no banco. Recorrências de cartão que ainda não foram conciliadas não entram na receita.</p>
+    <p className="admin-small">Os valores consideram pagamentos aprovados no banco. Registros históricos de cartão permanecem disponíveis para auditoria.</p>
    </>}
    {tab==='users'&&<>
     <Panel title="Gerenciar motoboys" subtitle="Pesquisar, bloquear/desbloquear e conceder cortesias com auditoria">
@@ -107,12 +107,12 @@ export default function AdminPage(){
      <p className="admin-small">O painel não altera o status de pagamentos no Mercado Pago. Cancelamentos e reembolsos reais são tratados no provedor.</p>
     </Panel>}
    {tab==='payments'&&<Panel title="Financeiro administrativo" subtitle="Somente pagamentos registrados e conciliados no MotoPRO">
-     <div className="admin-toolbar"><select className="select" aria-label="Meio" value={payMethod} onChange={e=>{setPayMethod(e.target.value);setPayPage(1);}}><option value="all">Pix e crédito</option><option value="pix">Pix</option><option value="credit">Crédito</option></select><select className="select" value={payStatus} aria-label="Status" onChange={e=>{setPayStatus(e.target.value);setPayPage(1);}}><option value="all">Todos os status</option><option value="approved">Aprovados</option><option value="pending">Pendentes</option><option value="rejected">Recusados</option><option value="refunded">Estornados</option><option value="canceled">Cancelados</option></select><label className="admin-date-label">De<input type="date" className="input" value={payFrom} onChange={e=>{setPayFrom(e.target.value);setPayPage(1);}}/></label><label className="admin-date-label">Até<input type="date" className="input" value={payTo} onChange={e=>{setPayTo(e.target.value);setPayPage(1);}}/></label></div>
+     <div className="admin-toolbar"><select className="select" aria-label="Meio" value={payMethod} onChange={e=>{setPayMethod(e.target.value);setPayPage(1);}}><option value="all">Todos os meios (inclui histórico)</option><option value="pix">Pix</option><option value="credit">Crédito</option></select><select className="select" value={payStatus} aria-label="Status" onChange={e=>{setPayStatus(e.target.value);setPayPage(1);}}><option value="all">Todos os status</option><option value="approved">Aprovados</option><option value="pending">Pendentes</option><option value="rejected">Recusados</option><option value="refunded">Estornados</option><option value="canceled">Cancelados</option></select><label className="admin-date-label">De<input type="date" className="input" value={payFrom} onChange={e=>{setPayFrom(e.target.value);setPayPage(1);}}/></label><label className="admin-date-label">Até<input type="date" className="input" value={payTo} onChange={e=>{setPayTo(e.target.value);setPayPage(1);}}/></label></div>
      <div className="admin-result"><strong>{formatMoney(payments?.approvedCents??0)}</strong><span>{payments?.approvedCount??0} pagamentos aprovados no período/filtros</span></div>
      <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Motoboy</th><th>Data</th><th>Meio</th><th>Status</th><th>Valor</th><th>Referência MP</th></tr></thead><tbody>{payments?.items.map(p=><tr key={p.id}><td>{p.name}</td><td>{date(p.createdAt)}</td><td>{p.method==='credit'?'Crédito':'Pix'}</td><td><span className="admin-status">{stateLabel(p.status)}</span></td><td>{formatMoney(p.amountCents)}</td><td><code>{p.providerPaymentId||'—'}</code></td></tr>)}</tbody></table></div>
      {!payments?.items.length&&<Empty message="Nenhum pagamento encontrado"/>}
      <Pager page={payPage} total={payments?.total??0} pageSize={15} onChange={setPayPage}/>
-     <p className="admin-small">Não contabilize transações de cartão ausentes como receita. Confirme conciliação no Mercado Pago antes de fechar o financeiro.</p>
+     <p className="admin-small">Confira a conciliação dos pagamentos no Mercado Pago antes de fechar o financeiro.</p>
    </Panel>}
    {tab==='campaigns'&&<>
     <div className="two-col admin-campaign-grid"><Panel title={editingCampaign?'Editar campanha':'Nova campanha de premiação'} subtitle="Somente benefícios não aleatórios, sujeitos a regulamento aprovado">
@@ -137,7 +137,7 @@ export default function AdminPage(){
      <label>Mensagem geral<textarea className="textarea" rows={2} maxLength={500} value={settings.announcement} onChange={e=>setSettings(s=>s?({...s,announcement:e.target.value}):s)}/></label>
      <label>Aviso de manutenção (informativo)<textarea className="textarea" rows={2} maxLength={500} value={settings.maintenanceNotice} onChange={e=>setSettings(s=>s?({...s,maintenanceNotice:e.target.value}):s)}/></label>
      <label>Benefícios Premium (um por linha)<textarea className="textarea" rows={4} value={benefitText} onChange={e=>setBenefitText(e.target.value)}/></label>
-     <Notice>Alterar o preço afeta apenas novas cobranças Pix e novas assinaturas de crédito. Contratos recorrentes existentes mantêm o preço anterior.</Notice>
+     <Notice>Alterar o preço afeta apenas os novos Pix. Contratos históricos de cartão não são alterados.</Notice>
      <button className="btn" disabled={saving}><Save size={16}/> Salvar configurações</button>
     </form>
    </Panel>}
