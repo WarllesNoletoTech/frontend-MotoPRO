@@ -2,6 +2,7 @@
   "name": "MotoPRO | Gestão inteligente para entregadores",
   "short_name": "MotoPRO",
   "description": "Ganhos, despesas, metas e gestão da moto em um só lugar.",
+  "id": "/app",
   "start_url": "/app",
   "scope": "/",
   "display": "standalone",

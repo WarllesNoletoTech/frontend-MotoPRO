@@ -6,7 +6,8 @@ export async function api<T>(path:string,options:RequestInit={}):Promise<T>{
  let payload:any;
  try{payload=await response.json();}catch{payload={};}
  if(!response.ok){
-  const message = payload.error || (response.status>=500 ? 'Não foi possível acessar o servidor. Verifique o status da API e tente novamente.' : `Erro HTTP ${response.status}`);
+  const fieldMessage=Array.isArray(payload.details)?payload.details.find((i:any)=>i?.field==='phone')?.message:null;
+  const message = fieldMessage || payload.error || (response.status>=500 ? 'Não foi possível acessar o servidor. Verifique o status da API e tente novamente.' : `Erro HTTP ${response.status}`);
   const err=new Error(message) as ApiError;err.status=response.status;throw err;
  }
  return payload as T;

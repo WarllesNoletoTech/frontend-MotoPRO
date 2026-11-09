@@ -5,6 +5,7 @@ import {usePathname,useRouter} from 'next/navigation';
 import {LayoutDashboard,ReceiptText,Mic2,Bike,Target,Plug,ShieldCheck,LogOut,Settings,Gift,ChevronRight,LoaderCircle,Menu,X,Wallet,CalendarClock,LockKeyhole,QrCode} from 'lucide-react';
 import {api} from '@/lib/api';
 import {readBillingStatus} from '@/lib/billingContract';
+import CompletePhone from '@/components/CompletePhone';
 const navigation=[
  {href:'/app',label:'Visão geral',Icon:LayoutDashboard},
  {href:'/app/lancamentos',label:'Lançamentos',Icon:ReceiptText},
@@ -16,7 +17,7 @@ const navigation=[
  {href:'/app/premiacoes',label:'Benefícios',Icon:Gift},
  {href:'/app/configuracoes',label:'Configurações',Icon:Settings}
 ];
-type User={id:string;name:string;email:string;trialEndsAt:string;role:string};
+type User={id:string;name:string;email:string;phone:string|null;trialEndsAt:string;role:string};
 export default function ProtectedShell({children}:{children:React.ReactNode}){
  const [user,setUser]=useState<User|null>(null);
  const [checking,setChecking]=useState(true);
@@ -32,7 +33,7 @@ export default function ProtectedShell({children}:{children:React.ReactNode}){
  useEffect(()=>{setMenuOpen(false);},[pathname]);
  useEffect(()=>{api<{announcement:string;maintenanceNotice:string}>('/public/settings').then(setNotices).catch(()=>{});},[]);
  useEffect(()=>{
-  if(!user){setPremiumAccess(null);return;}
+  if(!user || (user.role!=='admin'&&!user.phone)){setPremiumAccess(null);return;}
   if(user.role==='admin'){setPremiumAlert(null);setPremiumAccess({premiumRequired:false,allowed:true,priceCents:999});setAccessError('');return;}
   setPremiumAccess(null);setAccessError('');
   let valid=true;
@@ -75,6 +76,7 @@ export default function ProtectedShell({children}:{children:React.ReactNode}){
  const logout=async()=>{await api('/auth/logout',{method:'POST'}).catch(()=>{});router.replace('/entrar');};
  if(checking)return <div className="loading-page"><LoaderCircle className="spin"/> Carregando seu MotoPRO...</div>;
  if(!user)return null;
+ if(user.role==='driver'&&!user.phone)return <CompletePhone name={user.name} onComplete={setUser} onLogout={logout}/>;
  if((user.role==='admin'&&pathname==='/app')||(user.role!=='admin'&&pathname.startsWith('/app/admin')))return <div className="loading-page"><LoaderCircle className="spin"/> Redirecionando...</div>;
  return <div className="app-shell">
   {menuOpen&&<button className="drawer-backdrop" aria-label="Fechar menu" onClick={()=>setMenuOpen(false)}/>}

@@ -226,3 +226,23 @@ body{background:var(--bg);color:var(--ink);font-synthesis:none}
 .pix-subscription-prompt.expiring{border-color:#997939;background:#302719}
 .pix-subscription-prompt.expiring>svg{color:#f7d18d}
 .premium-gate-retry{border:0;background:transparent;color:#93ddbe;text-decoration:underline;cursor:pointer;font-size:13px;padding:4px}
+
+/* MotoPRO V3.11 - completar telefone e instalação PWA */
+.phone-completion-page{min-height:100dvh;background:#080d0d;display:grid;place-items:center;padding:24px;color:#f0fff7}
+.phone-completion-card{width:min(100%,470px);padding:34px;border:1px solid #376a4e;border-radius:24px;background:linear-gradient(150deg,#172c23,#101817);box-shadow:0 20px 60px #0009;display:flex;flex-direction:column;gap:17px}
+.phone-completion-icon{width:70px;height:70px;display:grid;place-items:center;color:#46edaa;background:#15442e;border-radius:19px}
+.phone-completion-brand{display:flex;align-items:center;gap:6px;font:750 19px Outfit;color:#f2fff6}
+.phone-completion-brand span{color:#4cebae}
+.phone-completion-card h1{font-size:clamp(22px,4vw,30px);line-height:1.2}
+.phone-completion-card p{color:#b8cec0;font-size:14px;line-height:1.55}
+.phone-completion-card label{font-size:13px;font-weight:700;color:#b6dfca}
+.phone-completion-card .input{background:#0d1c15;color:#edfff6;border-color:#2d6a4b}
+.phone-completion-exit{display:flex;align-items:center;justify-content:center;gap:7px;background:none;color:#b4d9c6;border:0;padding:10px}
+.pwa-install-overlay{position:fixed;inset:0;z-index:105;background:#000b;display:grid;place-items:center;padding:18px}
+.pwa-install-dialog{width:min(100%,420px);border:1px solid #42815b;border-radius:23px;background:linear-gradient(150deg,#152921,#0d1815);color:#effff6;padding:30px;box-shadow:0 20px 80px #000c;position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:15px}
+.pwa-install-dialog h2{font:750 clamp(22px,4vw,27px)/1.2 Outfit;color:#f6fff9}
+.pwa-install-dialog p{font-size:13px;color:#b5cfbe;line-height:1.6}
+.pwa-install-icon{width:75px;height:75px;border-radius:22px;background:#15442e;color:#4ff1ad;display:grid;place-items:center}
+.pwa-install-close{border:0;background:transparent;color:#aed6be;position:absolute;top:12px;right:12px;padding:9px}
+.pwa-install-instructions{width:100%;border:1px solid #2e694b;border-radius:12px;padding:15px;color:#e0ffe9;font-size:13px;background:#143b28;line-height:1.6}
+.pwa-install-later{border:0;background:transparent;color:#a9e1c2;text-decoration:underline;padding:8px}
