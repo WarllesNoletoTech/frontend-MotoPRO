@@ -2,7 +2,7 @@
 import {useEffect,useState} from 'react';
 import Link from 'next/link';
 import {usePathname,useRouter} from 'next/navigation';
-import {LayoutDashboard,ReceiptText,Mic2,Bike,Target,Plug,ShieldCheck,LogOut,Settings,ChevronRight,LoaderCircle,Menu,X} from 'lucide-react';
+import {LayoutDashboard,ReceiptText,Mic2,Bike,Target,Plug,ShieldCheck,LogOut,Settings,ChevronRight,LoaderCircle,Menu,X,Wallet} from 'lucide-react';
 import {api} from '@/lib/api';
 const navigation=[
  {href:'/app',label:'Visão geral',Icon:LayoutDashboard},
@@ -14,7 +14,7 @@ const navigation=[
  {href:'/app/assinatura',label:'Assinatura',Icon:ShieldCheck},
  {href:'/app/configuracoes',label:'Configurações',Icon:Settings}
 ];
-type User={id:string;name:string;email:string;trialEndsAt:string};
+type User={id:string;name:string;email:string;trialEndsAt:string;role:string};
 export default function ProtectedShell({children}:{children:React.ReactNode}){
  const [user,setUser]=useState<User|null>(null);
  const [checking,setChecking]=useState(true);
@@ -31,6 +31,7 @@ export default function ProtectedShell({children}:{children:React.ReactNode}){
    <Link href="/app" className="brand"><span className="brand-mark"><Bike size={26}/></span><span><strong>Moto<span className="brand-highlight">PRO</span></strong><small>O controle é seu.</small></span></Link>
    <div className="sidebar-section-label">MENU PRINCIPAL</div>
    <nav className="nav-items">{navigation.map(({href,label,Icon})=><Link key={href} href={href} className={`nav-link ${pathname===href?'active':''}`}><Icon size={19}/><span>{label}</span>{pathname===href&&<ChevronRight size={15} className="nav-chevron"/>}</Link>)}</nav>
+   {user.role==='admin'&&<Link href="/app/admin" className={`nav-link ${pathname==='/app/admin'?'active':''}`}><Wallet size={19}/> Administração</Link>}
    <div className="sidebar-bottom"><div className="profile-dot">{user.name.charAt(0).toUpperCase()}</div><div className="profile-meta"><strong>{user.name}</strong><small>{user.email}</small></div><button aria-label="Sair da conta" className="icon-btn" onClick={logout}><LogOut size={18}/></button></div>
   </aside>
   <div className="app-main">

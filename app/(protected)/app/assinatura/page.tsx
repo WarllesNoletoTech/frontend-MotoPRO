@@ -1,8 +1,57 @@
-import {CheckCircle2,Crown,ShieldCheck,CreditCard,LockKeyhole} from 'lucide-react';
-import {PageHeader,Panel,Notice} from '@/components/UI';
+'use client';
+import {useCallback,useEffect,useState} from 'react';
+import {CreditCard,QrCode,ShieldCheck,RotateCcw,Crown,Copy,Check,CalendarClock} from 'lucide-react';
+import {PageHeader,Panel,Notice,Loading} from '@/components/UI';
+import {api} from '@/lib/api';
+
+type Status={plan:{priceCents:number;frequency:number;frequencyUnit:string;pixAutomaticAvailable:boolean};billingEnabled:boolean;subscription:null|{method:'pix'|'credit';status:string;activeUntil?:string;active:boolean;cancelAtPeriodEnd:boolean};pendingPix:null|{id:string;code?:string;qrCodeBase64?:string;ticketUrl?:string;expiresAt?:string}};
+const money=(cents:number)=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(cents/100);
 export default function SubscriptionPage(){
- return <><PageHeader eyebrow="MOTOPRO PREMIUM" title="Sua assinatura" description="O modelo comercial está preparado para evoluir após o piloto."/>
- <div className="two-col"><Panel title="Plano MotoPRO" subtitle="Valor de lançamento proposto"><div className="payment-price">R$ 4,99 <span>/ 7 dias</span></div><p className="text-muted" style={{fontSize:13,marginTop:8}}>Preço sugerido. Cobranças ainda não estão ativas no MVP.</p><div style={{marginTop:22}}>{['Controle de ganhos e despesas','Dashboard financeiro','Assistente por voz (após configuração)','Metas e lembretes de manutenção','Integrações autorizadas futuramente'].map(x=><div key={x} className="feature-check"><CheckCircle2 size={17}/> {x}</div>)}</div><div style={{marginTop:20}}><Notice>A fase de teste está aberta. Não solicitamos pagamento e não há renovação automática nesta versão.</Notice></div></Panel>
- <Panel title="Transparência primeiro" subtitle="Como será quando o pagamento for ativado"><div className="stack"><div className="integration-item"><CreditCard color="#198451"/><div><strong>Pix com confirmação</strong><small>Liberação após webhook validado e conciliação.</small></div></div><div className="integration-item"><ShieldCheck color="#198451"/><div><strong>Cancelamento simples</strong><small>Sem prejuízo ao trabalho em plataformas de entrega.</small></div></div><div className="integration-item"><LockKeyhole color="#198451"/><div><strong>Dados preservados</strong><small>O usuário manterá acesso e possibilidade de exportação dos próprios dados.</small></div></div><div className="not-ready"><Crown size={16} style={{verticalAlign:'middle'}}/> O módulo de cobrança depende de credenciais, testes de pagamento e definição das condições comerciais.</div></div></Panel></div>
+ const [state,setState]=useState<Status|null>(null);
+ const [error,setError]=useState('');
+ const [busy,setBusy]=useState('');
+ const [message,setMessage]=useState('');
+ const [copied,setCopied]=useState(false);
+ const load=useCallback(async()=>{try{setState(await api<Status>('/billing/me'));}catch(e){setError(e instanceof Error?e.message:'Falha ao obter assinatura');}},[]);
+ useEffect(()=>{void load();},[load]);
+ const call=async(path:string)=>{
+  setError('');setMessage('');setBusy(path);
+  try{
+   const result=await api<{checkoutUrl?:string;message?:string}>(path,{method:'POST'});
+   if(result.checkoutUrl){const url=new URL(result.checkoutUrl);if(!['https:'].includes(url.protocol)||!/(^|\.)mercadopago\.com(\.br)?$/.test(url.hostname))throw new Error('Link de pagamento não autorizado');window.location.assign(result.checkoutUrl);return;}
+   setMessage(result.message||'Operação realizada.');await load();
+  }catch(e){setError(e instanceof Error?e.message:'Não foi possível completar a operação');}finally{setBusy('');}
+ };
+ const copy=async()=>{if(state?.pendingPix?.code){await navigator.clipboard.writeText(state.pendingPix.code);setCopied(true);window.setTimeout(()=>setCopied(false),2000);}};
+ return <><PageHeader eyebrow="MOTOPRO PREMIUM" title="Sua assinatura" description="Assinatura semanal de R$ 9,99. Pague pelo Mercado Pago e acompanhe seu acesso." />
+ {!state?<Loading/>:<div className="two-col">
+  <Panel title="Premium" subtitle="Ferramentas adicionais para entregadores">
+   <div className="payment-price">{money(state.plan.priceCents)} <span>/ semana</span></div>
+   <div style={{margin:'12px 0 20px',fontSize:13,color:'var(--muted)'}}>Valor cobrado a cada 7 dias. Sem taxa de adesão.</div>
+   {['Controle financeiro pessoal e metas','Relatório de receitas e despesas','Controle de combustível e manutenção','Assistente inteligente quando habilitado'].map(x=><div className="feature-check" key={x}><Check size={17}/> {x}</div>)}
+   <div style={{marginTop:20}}><Notice kind={state.subscription?.active?'success':'info'}>{state.subscription?.active?`Premium ativo até ${new Date(state.subscription.activeUntil!).toLocaleDateString('pt-BR')}.`:state.subscription?.status==='pending'?'Pagamento ou autorização aguardando confirmação.':'O acesso Premium será liberado somente após pagamento confirmado.'}</Notice></div>
+   {error&&<div style={{marginTop:13}}><Notice kind="error">{error}</Notice></div>}
+   {message&&<div style={{marginTop:13}}><Notice kind="success">{message}</Notice></div>}
+  </Panel>
+  <Panel title="Formas de pagamento" subtitle="Mercado Pago — sem cartão de débito">
+   <div className="stack">
+    <div className="integration-item"><QrCode color="#39e5a5"/><div><strong>Pix</strong><small>Pagamento avulso por 7 dias; não é Pix Automático.</small></div></div>
+    <button className="btn wide" disabled={!state.billingEnabled||!!busy||!!state.subscription?.active} onClick={()=>call('/billing/pix')}><QrCode size={17}/> {busy==='/billing/pix'?'Gerando cobrança...':'Gerar Pix de R$ 9,99'}</button>
+    {state.pendingPix?.code&&<div className="pix-result">
+      <strong>Seu Pix</strong><small>Confirme o pagamento no aplicativo do banco. O acesso é liberado após validação.</small>
+      {state.pendingPix.qrCodeBase64&&<img src={`data:image/png;base64,${state.pendingPix.qrCodeBase64}`} alt="QR Code do Pix" width={170} height={170}/>}
+      <div className="pix-code">{state.pendingPix.code}</div><button className="btn secondary wide" onClick={copy}>{copied?<Check size={16}/>:<Copy size={16}/>} {copied?'Copiado':'Copiar Pix'}</button>
+      {state.pendingPix.expiresAt&&<small>Válido até {new Date(state.pendingPix.expiresAt).toLocaleString('pt-BR')}</small>}
+    </div>}
+    <div className="integration-item"><CreditCard color="#39e5a5"/><div><strong>Cartão de crédito</strong><small>Assinatura com renovação semanal, mediante autorização.</small></div></div>
+    <button className="btn secondary wide" disabled={!state.billingEnabled||!!busy||!!state.subscription?.active} onClick={()=>call('/billing/credit')}><CreditCard size={17}/> {busy==='/billing/credit'?'Redirecionando...':'Assinar no crédito'}</button>
+    <button className="btn outline wide" disabled={!state.billingEnabled||!!busy} onClick={()=>call('/billing/refresh')}><RotateCcw size={17}/> Verificar confirmação do pagamento</button>
+    {state.subscription?.method==='credit'&&!state.subscription.cancelAtPeriodEnd&&<button className="btn danger wide" disabled={!state.billingEnabled||!!busy} onClick={()=>{if(window.confirm('Cancelar futuras cobranças no crédito?'))void call('/billing/cancel');}}>Cancelar renovação automática</button>}
+    {!state.billingEnabled&&<Notice>Os pagamentos estão em homologação. Nenhuma cobrança será iniciada até a configuração ser habilitada pelo administrador.</Notice>}
+    <div style={{display:'flex',gap:9,alignItems:'flex-start',fontSize:12,color:'var(--muted)'}}><ShieldCheck size={17}/><span>Seus dados de cartão não passam pelo MotoPRO. A cobrança ocorre no ambiente seguro do Mercado Pago.</span></div>
+   </div>
+  </Panel>
+ </div>}
+ <div style={{marginTop:18}}><Panel title="Premiação e benefícios" subtitle="Campanhas e recompensas do MotoPRO"><div className="integration-item"><Crown color="#39e5a5"/><div><strong>Premiação mensal em preparação</strong><small>O prêmio, o regulamento e eventuais autorizações legais serão divulgados antes de qualquer campanha. A assinatura não concede automaticamente participação em sorteios.</small></div></div><div className="integration-item" style={{marginTop:12}}><CalendarClock color="#39e5a5"/><div><strong>Transparência</strong><small>Nenhum sorteio está ativo, e o aplicativo não faz seleção aleatória de ganhadores.</small></div></div></Panel></div>
  </>;
 }
