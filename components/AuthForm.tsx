@@ -11,7 +11,7 @@ export default function AuthForm({mode}:{mode:'login'|'register'}){
  const [busy,setBusy]=useState(false),[error,setError]=useState('');
  const submit=async(e:React.FormEvent)=>{
   e.preventDefault();setError('');setBusy(true);
-  try{await api(mode==='login'?'/auth/login':'/auth/register',{method:'POST',body:JSON.stringify(mode==='login'?{email,password}:{name,email,password})});router.replace('/app');router.refresh();}
+  try{const result=await api<{user:{role:string}}>(mode==='login'?'/auth/login':'/auth/register',{method:'POST',body:JSON.stringify(mode==='login'?{email,password}:{name,email,password})});router.replace(result.user.role==='admin'?'/app/admin':'/app');router.refresh();}
   catch(err){setError(err instanceof Error?err.message:'Falha no acesso');}
   finally{setBusy(false);}
  };

@@ -22,9 +22,15 @@ export default function ProtectedShell({children}:{children:React.ReactNode}){
  const pathname=usePathname();const router=useRouter();
  useEffect(()=>{let active=true;api<{user:User}>('/auth/me').then(r=>{if(active)setUser(r.user);}).catch(()=>{if(active)router.replace('/entrar');}).finally(()=>{if(active)setChecking(false);});return()=>{active=false;};},[router]);
  useEffect(()=>{setMenuOpen(false);},[pathname]);
+ useEffect(()=>{
+  if(checking||!user)return;
+  if(user.role==='admin'&&pathname==='/app')router.replace('/app/admin');
+  if(user.role!=='admin'&&pathname.startsWith('/app/admin'))router.replace('/app');
+ },[checking,user,pathname,router]);
  const logout=async()=>{await api('/auth/logout',{method:'POST'}).catch(()=>{});router.replace('/entrar');};
  if(checking)return <div className="loading-page"><LoaderCircle className="spin"/> Carregando seu MotoPRO...</div>;
  if(!user)return null;
+ if((user.role==='admin'&&pathname==='/app')||(user.role!=='admin'&&pathname.startsWith('/app/admin')))return <div className="loading-page"><LoaderCircle className="spin"/> Redirecionando...</div>;
  return <div className="app-shell">
   {menuOpen&&<button className="drawer-backdrop" aria-label="Fechar menu" onClick={()=>setMenuOpen(false)}/>}
   <aside className={`sidebar ${menuOpen?'open':''}`}>
