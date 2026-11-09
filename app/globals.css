@@ -304,3 +304,106 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .pix-subscription-prompt.expired>svg{color:#ffb1b1}
 .pix-subscription-prompt.expiring{border-color:#936b29;background:#382d15;color:#ffd574}
 @media(max-width:650px){.billing-status{white-space:normal;padding:5px 8px}}
+
+
+/* MotoPRO — landing responsiva V3.14.1.
+   Manter este bloco depois dos estilos anteriores: corrige a regra de duas
+   colunas que sobrescrevia o breakpoint mobile na versão original. */
+.landing { width:100%; max-width:100%; overflow-x:clip; }
+.landing main, .landing-nav, .landing-hero, .landing-benefits, .landing-final, .landing-footer { min-width:0; }
+.landing-nav { width:100%; gap:18px; }
+.landing-nav .brand { flex:0 0 auto; min-width:0; }
+.landing-nav-actions { display:flex; align-items:center; justify-content:flex-end; gap:10px; min-width:0; }
+.landing-nav-note { white-space:nowrap; margin-right:9px; }
+.landing-nav-actions .btn { min-height:44px; padding:11px 16px; font-size:12px; white-space:nowrap; }
+.landing-nav-actions .landing-header-signup { color:#20160a; background:linear-gradient(110deg,#ffb32c,#ffce69); border:1px solid #ffcb66; }
+.landing-nav-actions .landing-header-login { color:#fff3df; background:#29231a; border:1px solid #5d4e3b; }
+.landing-nav-actions .landing-header-login:hover { background:#392f22; }
+.landing-hero { width:100%; grid-template-columns:minmax(0,1.04fr) minmax(0,.96fr); }
+.landing-hero-copy, .landing-demo-area, .landing-showcase { min-width:0; }
+.landing-hero h1 { overflow-wrap:normal; }
+.landing-demo-area { justify-self:center; }
+.landing-showcase { width:100%; max-width:100%; }
+.landing-features { display:flex; flex-wrap:wrap; align-items:center; }
+.landing-features>span { display:inline-flex; align-items:center; gap:6px; }
+.landing-features svg { flex:none; }
+.landing-benefits .feature-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); }
+.landing-final { width:calc(100% - 48px); }
+
+/* Tablets e celulares: a prévia passa para baixo do texto. */
+@media (max-width:980px) {
+  .landing-hero { grid-template-columns:minmax(0,1fr); gap:44px; padding:64px 24px 80px; }
+  .landing-hero-copy { max-width:680px; }
+  .landing-hero h1 { font-size:clamp(43px,7.2vw,65px); letter-spacing:-2.5px; }
+  .landing-demo-area { width:min(100%,560px); max-width:560px; margin:0 auto; padding-top:24px; }
+  .landing-nav-note { display:none; }
+  .landing-benefits .feature-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .landing-final { margin-inline:24px; flex-wrap:wrap; }
+}
+
+/* Smartphone: cabeçalho compacto, CTAs acessíveis e card sem sobreposição. */
+@media (max-width:600px) {
+  .landing-glow-one { width:300px; height:300px; right:-170px; top:160px; }
+  .landing-glow-two { width:300px; height:320px; left:-180px; top:450px; }
+  .landing-nav { padding:16px 16px 18px; gap:8px; }
+  .landing-nav .brand { gap:7px; }
+  .landing-nav .brand-mark { width:38px; height:38px; border-radius:12px; }
+  .landing-nav .brand-mark svg { width:20px; height:20px; }
+  .landing-nav .brand strong { font-size:20px; letter-spacing:-.8px; }
+  .landing-nav .brand small { font-size:9px; }
+  .landing-nav-actions { gap:7px; }
+  .landing-nav-actions .btn { min-height:39px; padding:8px 10px; font-size:11px; border-radius:11px; gap:5px; }
+  .landing-nav-actions .btn svg { width:13px; height:13px; }
+  .landing-hero { padding:42px 18px 66px; gap:34px; }
+  .landing-label { font-size:9px; line-height:1.5; max-width:100%; letter-spacing:.9px; margin-bottom:23px; }
+  .landing-hero h1 { font-size:clamp(33px,9.4vw,52px); letter-spacing:-1.65px; line-height:1.08; }
+  .landing-hero p { font-size:14px; line-height:1.65; margin:20px 0 24px; }
+  .landing-actions { gap:10px; }
+  .landing-actions .btn { min-height:47px; padding:13px 15px; font-size:12px; }
+  .landing-features { margin-top:24px; gap:11px 16px; line-height:1.4; }
+  .landing-features>span { font-size:11px; }
+  .landing-demo-area { padding:0; max-width:100%; display:flex; flex-direction:column; gap:12px; }
+  .landing-showcase { order:1; padding:18px 16px; border-radius:20px; }
+  .demo-accent { position:static; z-index:auto; width:fit-content; max-width:100%; box-shadow:none; }
+  .demo-accent-top { order:0; padding:8px 12px; font-size:9px; }
+  .demo-accent-bottom { order:2; padding:11px 13px; border-radius:12px; }
+  .demo-disclaimer { order:3; margin-top:0; text-align:left; }
+  .showcase-head { gap:8px; margin-bottom:19px; padding-bottom:15px; }
+  .showcase-brand { font-size:16px; flex-wrap:wrap; gap:6px; }
+  .showcase-brand-icon { width:29px; height:29px; flex:none; }
+  .showcase-avatar { width:30px; height:30px; flex:none; }
+  .showcase-money { font-size:clamp(28px,8vw,39px); line-height:1.15; }
+  .showcase-mini-stats { gap:8px; }
+  .showcase-mini-stats>div { min-width:0; padding:11px; }
+  .showcase-mini-stats strong { font-size:15px; }
+  .showcase-chart { gap:8px; height:92px; margin-top:20px; }
+  .showcase-foot { font-size:8px; letter-spacing:1px; }
+  .landing-benefits { padding:8px 18px 60px; }
+  .benefits-intro { margin-bottom:24px; }
+  .benefits-intro h2,.landing-final h2 { font-size:clamp(27px,7vw,37px); }
+  .landing-benefits .feature-grid { grid-template-columns:minmax(0,1fr); gap:12px; }
+  .feature-card { min-height:0; padding:21px; }
+  .landing-final { width:calc(100% - 36px); margin:0 18px 44px; display:grid; gap:20px; padding:25px 20px; }
+  .landing-final .btn { width:100%; min-height:47px; }
+  .landing-footer { padding:22px 18px 30px; gap:8px; }
+}
+
+/* Celulares mais estreitos (ex.: 320–360px). */
+@media (max-width:380px) {
+  .landing-nav { padding-inline:12px; }
+  .landing-nav .brand { gap:5px; }
+  .landing-nav .brand-mark { width:33px; height:33px; border-radius:10px; }
+  .landing-nav .brand strong { font-size:18px; }
+  .landing-nav .brand small { display:none; }
+  .landing-nav-actions { gap:5px; }
+  .landing-nav-actions .btn { padding:8px 8px; font-size:10px; min-height:38px; }
+  .landing-nav-actions .btn svg { display:none; }
+  .landing-hero { padding-inline:15px; }
+  .landing-hero h1 { font-size:clamp(32px,9.3vw,36px); letter-spacing:-1.35px; }
+  .landing-actions { flex-direction:column; }
+  .landing-actions .btn { width:100%; }
+  .showcase-mini-stats strong { font-size:14px; }
+  .landing-showcase { padding:15px 12px; }
+  .showcase-money { font-size:28px; }
+  .showcase-trend { padding:4px 6px; }
+}

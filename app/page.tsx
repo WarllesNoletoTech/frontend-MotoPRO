@@ -13,7 +13,7 @@ export default function Landing(){
   <div className="landing-glow landing-glow-one"/><div className="landing-glow landing-glow-two"/>
   <header className="landing-nav">
    <Link href="/" className="brand"><span className="brand-mark"><Bike size={23}/></span><span><strong>Moto<span className="brand-highlight">PRO</span></strong><small>O controle é seu.</small></span></Link>
-   <nav className="landing-nav-actions"><span className="landing-nav-note">FEITO PARA ENTREGADORES</span><Link className="btn secondary" href="/entrar">Entrar <ArrowUpRight size={16}/></Link></nav>
+   <nav className="landing-nav-actions" aria-label="Acesso ao MotoPRO"><span className="landing-nav-note">FEITO PARA ENTREGADORES</span><Link className="btn landing-header-signup" href="/cadastro">Cadastre-se <ArrowRight size={16} aria-hidden="true"/></Link><Link className="btn landing-header-login" href="/entrar">Entrar <ArrowUpRight size={16} aria-hidden="true"/></Link></nav>
   </header>
   <main>
    <section className="landing-hero">
