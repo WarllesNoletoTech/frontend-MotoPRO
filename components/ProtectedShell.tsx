@@ -6,6 +6,8 @@ import {LayoutDashboard,ReceiptText,Mic2,Bike,Target,Plug,ShieldCheck,LogOut,Set
 import {api} from '@/lib/api';
 import {readBillingStatus} from '@/lib/billingContract';
 import CompletePhone from '@/components/CompletePhone';
+import CompleteName from '@/components/CompleteName';
+import {pixOrderRequestOptions} from '@/lib/mpDevice';
 const navigation=[
  {href:'/app',label:'Visão geral',Icon:LayoutDashboard},
  {href:'/app/lancamentos',label:'Lançamentos',Icon:ReceiptText},
@@ -17,7 +19,7 @@ const navigation=[
  {href:'/app/premiacoes',label:'Benefícios',Icon:Gift},
  {href:'/app/configuracoes',label:'Configurações',Icon:Settings}
 ];
-type User={id:string;name:string;email:string;phone:string|null;trialEndsAt:string;role:string};
+type User={id:string;name:string;firstName:string;lastName:string;requiresNameCompletion:boolean;email:string;phone:string|null;trialEndsAt:string;role:string};
 export default function ProtectedShell({children}:{children:React.ReactNode}){
  const [user,setUser]=useState<User|null>(null);
  const [checking,setChecking]=useState(true);
@@ -32,9 +34,10 @@ export default function ProtectedShell({children}:{children:React.ReactNode}){
  const pathname=usePathname();const router=useRouter();
  useEffect(()=>{let active=true;api<{user:User}>('/auth/me').then(r=>{if(active)setUser(r.user);}).catch(()=>{if(active)router.replace('/entrar');}).finally(()=>{if(active)setChecking(false);});return()=>{active=false;};},[router]);
  useEffect(()=>{setMenuOpen(false);},[pathname]);
+ useEffect(()=>{const reload=()=>{api<{user:User}>('/auth/me').then(r=>setUser(r.user)).catch(()=>{});};window.addEventListener('motopro:profile-updated',reload);return()=>window.removeEventListener('motopro:profile-updated',reload);},[]);
  useEffect(()=>{api<{announcement:string;maintenanceNotice:string}>('/public/settings').then(setNotices).catch(()=>{});},[]);
  useEffect(()=>{
-  if(!user || (user.role!=='admin'&&!user.phone)){setPremiumAccess(null);setVerifiedPath('');return;}
+  if(!user || (user.role!=='admin'&&(!user.phone||user.requiresNameCompletion))){setPremiumAccess(null);setVerifiedPath('');return;}
   if(user.role==='admin'){setPremiumAlert(null);setPremiumAccess({premiumRequired:true,allowed:true,priceCents:999});setAccessError('');setVerifiedPath(pathname);return;}
   setPremiumAccess(null);setAccessError('');setVerifiedPath('');
   let valid=true;
@@ -65,7 +68,7 @@ export default function ProtectedShell({children}:{children:React.ReactNode}){
   try{
    // O backend reaproveita um Pix ainda válido e não duplica a cobrança.
    // A tela da assinatura mostrará o QR Code retornado pelo banco.
-   await api('/billing/pix',{method:'POST'});
+   await api('/billing/pix',await pixOrderRequestOptions());
    router.push('/app/assinatura');
   }catch(e){setPixError(e instanceof Error?e.message:'Não foi possível gerar o Pix. Tente novamente.');}
   finally{setGeneratingPix(false);}
@@ -78,7 +81,8 @@ export default function ProtectedShell({children}:{children:React.ReactNode}){
  const logout=async()=>{await api('/auth/logout',{method:'POST'}).catch(()=>{});router.replace('/entrar');};
  if(checking)return <div className="loading-page"><LoaderCircle className="spin"/> Carregando seu MotoPRO...</div>;
  if(!user)return null;
- if(user.role==='driver'&&!user.phone)return <CompletePhone name={user.name} onComplete={setUser} onLogout={logout}/>;
+ if(user.requiresNameCompletion)return <CompleteName user={user} onComplete={setUser} onLogout={logout}/>;
+ if(user.role==='driver'&&!user.phone)return <CompletePhone name={user.name} onComplete={updated=>setUser(prev=>prev?{...prev,...updated}:null)} onLogout={logout}/>;
  if((user.role==='admin'&&pathname==='/app')||(user.role!=='admin'&&pathname.startsWith('/app/admin')))return <div className="loading-page"><LoaderCircle className="spin"/> Redirecionando...</div>;
  return <div className="app-shell">
   {menuOpen&&<button className="drawer-backdrop" aria-label="Fechar menu" onClick={()=>setMenuOpen(false)}/>}

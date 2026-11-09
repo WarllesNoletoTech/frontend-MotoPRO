@@ -3,6 +3,7 @@ import {useCallback,useEffect,useRef,useState} from 'react';
 import {QrCode,ShieldCheck,RotateCcw,Crown,Copy,Check,CheckCircle2,Clock3,CalendarClock,AlertCircle} from 'lucide-react';
 import {PageHeader,Panel,Notice,Loading} from '@/components/UI';
 import {api} from '@/lib/api';
+import {pixOrderRequestOptions} from '@/lib/mpDevice';
 import {readBillingStatus,type BillingStatus} from '@/lib/billingContract';
 
 type Status=BillingStatus;
@@ -75,7 +76,7 @@ export default function SubscriptionPage(){
  const call=async(path:string)=>{
   setError('');setMessage('');setBusy(path);
   try{
-   await api<unknown>(path,{method:'POST'});
+   await api<unknown>(path,path==='/billing/pix'?await pixOrderRequestOptions():{method:'POST'});
    const updated=readBillingStatus(await api<unknown>('/billing/me'));
    setState(updated);
    if(path==='/billing/pix'){setMessage('Pix gerado. A confirmação será verificada automaticamente.');setFocusGeneratedPix(true);}
