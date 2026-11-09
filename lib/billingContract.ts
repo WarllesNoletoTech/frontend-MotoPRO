@@ -9,6 +9,7 @@ export type BillingNotice={
 };
 export type BillingStatus={
  contractVersion?:number;
+ trialDays?:number;
  renewalAllowed:boolean;
  notice:BillingNotice;
  access:{premiumRequired:boolean;allowed:boolean};
@@ -40,7 +41,11 @@ export function readBillingStatus(raw:unknown):BillingStatus{
  }
  if(raw.latestPix!=null && (!isRecord(raw.latestPix)||typeof raw.latestPix.status!=='string'||typeof raw.latestPix.amountCents!=='number'))throw versionError();
  if(raw.pendingPix!=null && (!isRecord(raw.pendingPix)||typeof raw.pendingPix.id!=='string'))throw versionError();
+ // Mesmo uma API antiga não pode autorizar conta sem pagamento, teste ou cortesia.
+ const entitled=['active','expiring','trial','courtesy'].includes(notice.status as string) &&
+   (typeof notice.activeUntil==='string' && Number.isFinite(Date.parse(notice.activeUntil)) && Date.parse(notice.activeUntil)>Date.now());
  return {...raw,
+  access:{premiumRequired:true,allowed:entitled},
   latestPix:raw.latestPix??null,
   pendingPix:raw.pendingPix??null,
   subscription:raw.subscription??null,
