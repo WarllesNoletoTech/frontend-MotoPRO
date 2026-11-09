@@ -2,7 +2,7 @@
 import {useEffect,useState} from 'react';
 import Link from 'next/link';
 import {usePathname,useRouter} from 'next/navigation';
-import {LayoutDashboard,ReceiptText,Mic2,Bike,Target,Plug,ShieldCheck,LogOut,Settings,Gift,ChevronRight,LoaderCircle,Menu,X,Wallet,CalendarClock,LockKeyhole} from 'lucide-react';
+import {LayoutDashboard,ReceiptText,Mic2,Bike,Target,Plug,ShieldCheck,LogOut,Settings,Gift,ChevronRight,LoaderCircle,Menu,X,Wallet,CalendarClock,LockKeyhole,QrCode} from 'lucide-react';
 import {api} from '@/lib/api';
 const navigation=[
  {href:'/app',label:'Visão geral',Icon:LayoutDashboard},
@@ -24,6 +24,8 @@ export default function ProtectedShell({children}:{children:React.ReactNode}){
  const [premiumAlert,setPremiumAlert]=useState<{status:string;title:string;message:string;activeUntil:string|null}|null>(null);
  const [premiumAccess,setPremiumAccess]=useState<{premiumRequired:boolean;allowed:boolean;priceCents:number}|null>(null);
  const [accessError,setAccessError]=useState(false);
+ const [generatingPix,setGeneratingPix]=useState(false);
+ const [pixError,setPixError]=useState('');
  const pathname=usePathname();const router=useRouter();
  useEffect(()=>{let active=true;api<{user:User}>('/auth/me').then(r=>{if(active)setUser(r.user);}).catch(()=>{if(active)router.replace('/entrar');}).finally(()=>{if(active)setChecking(false);});return()=>{active=false;};},[router]);
  useEffect(()=>{setMenuOpen(false);},[pathname]);
@@ -53,6 +55,22 @@ export default function ProtectedShell({children}:{children:React.ReactNode}){
  const accountPages=pathname==='/app/assinatura'||pathname==='/app/configuracoes';
  const premiumBlocked=user?.role!=='admin'&&!accountPages&&premiumAccess?.premiumRequired&&!premiumAccess.allowed;
  const verifyingAccess=user?.role!=='admin'&&!accountPages&&!premiumAccess&&!accessError;
+ const generatePix=async()=>{
+  if(generatingPix)return;
+  setPixError('');setGeneratingPix(true);
+  try{
+   // O backend reaproveita um Pix ainda válido e não duplica a cobrança.
+   // A tela da assinatura mostrará o QR Code retornado pelo banco.
+   await api('/billing/pix',{method:'POST'});
+   router.push('/app/assinatura');
+  }catch(e){setPixError(e instanceof Error?e.message:'Não foi possível gerar o Pix. Tente novamente.');}
+  finally{setGeneratingPix(false);}
+ };
+ const gateExpired=premiumAlert?.status==='expired';
+ const gateTitle=gateExpired?'Sua assinatura Premium venceu':'Você ainda não ativou o MotoPRO Premium';
+ const gateDescription=gateExpired
+  ?'Seu período pago terminou. Renove pelo Pix para voltar a utilizar todos os recursos, sem perder seus dados.'
+  :'Para começar a utilizar todos os recursos do MotoPRO, ative sua assinatura semanal pelo Pix. Seus dados ficam preservados.';
  const logout=async()=>{await api('/auth/logout',{method:'POST'}).catch(()=>{});router.replace('/entrar');};
  if(checking)return <div className="loading-page"><LoaderCircle className="spin"/> Carregando seu MotoPRO...</div>;
  if(!user)return null;
@@ -68,7 +86,7 @@ export default function ProtectedShell({children}:{children:React.ReactNode}){
   </aside>
   <div className="app-main">
    <header className="topbar"><button aria-label="Abrir menu" className="mobile-menu-btn icon-btn" onClick={()=>setMenuOpen(v=>!v)}>{menuOpen?<X/>:<Menu/>}</button><div className="topbar-eyebrow">SEU CORRE, SEU RESULTADO</div><div className="topbar-right"><span className="online-dot"/> Minha conta <span className="mini-avatar">{user.name.charAt(0).toUpperCase()}</span></div></header>
-   <main className="page-wrap">{premiumAlert&&<Link href="/app/assinatura" className={`renewal-shell-banner ${premiumAlert.status}`}><CalendarClock size={20}/><span><strong>{premiumAlert.title}</strong><small>{premiumAlert.message} Toque para renovar pelo Pix.</small></span><ChevronRight size={18}/></Link>}{notices?.maintenanceNotice&&<div className="notice info" style={{marginBottom:14}}>{notices.maintenanceNotice}</div>}{notices?.announcement&&<div className="notice success" style={{marginBottom:14}}>{notices.announcement}</div>}{accessError&&!accountPages&&user.role!=='admin'?<section className="premium-gate" role="alert"><div className="premium-gate-symbol"><LockKeyhole/></div><h1>Não foi possível verificar sua assinatura</h1><p>Por segurança, os recursos Premium não foram carregados. Você pode tentar novamente ou acessar sua conta e pagamentos.</p><button className="btn wide" onClick={()=>window.location.reload()}>Tentar novamente</button><Link className="premium-gate-secondary" href="/app/assinatura">Ver assinatura</Link></section>:verifyingAccess?<div className="loading-page"><LoaderCircle className="spin"/> Verificando assinatura...</div>:premiumBlocked?<section className="premium-gate" role="status"><div className="premium-gate-symbol"><LockKeyhole size={36}/></div><h1>Ative seu MotoPRO Premium</h1><p>Todos os recursos do aplicativo exigem Premium ativo, período gratuito válido ou cortesia. Seus dados continuam guardados e você pode exportá-los em Configurações.</p><div className="premium-gate-price">{new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format((premiumAccess?.priceCents??999)/100)} <span>/ 7 dias via Pix</span></div><Link className="btn wide" href="/app/assinatura"><ShieldCheck size={18}/> Ativar ou renovar Premium</Link><Link className="premium-gate-secondary" href="/app/configuracoes">Minha conta e meus dados</Link></section>:children}</main>
+   <main className="page-wrap">{premiumAlert&&<Link href="/app/assinatura" className={`renewal-shell-banner ${premiumAlert.status}`}><CalendarClock size={20}/><span><strong>{premiumAlert.title}</strong><small>{premiumAlert.message} Toque para renovar pelo Pix.</small></span><ChevronRight size={18}/></Link>}{notices?.maintenanceNotice&&<div className="notice info" style={{marginBottom:14}}>{notices.maintenanceNotice}</div>}{notices?.announcement&&<div className="notice success" style={{marginBottom:14}}>{notices.announcement}</div>}{accessError&&!accountPages&&user.role!=='admin'?<section className="premium-gate" role="alert"><div className="premium-gate-symbol"><LockKeyhole/></div><h1>Não foi possível consultar sua assinatura</h1><p>A conexão com o servidor falhou. Isso não significa que seu Premium venceu. Confira seu pagamento ou tente consultar novamente.</p><Link className="btn wide" href="/app/assinatura"><QrCode size={18}/> Ver assinatura e gerar Pix</Link><button className="premium-gate-retry" onClick={()=>window.location.reload()}>Tentar verificar novamente</button></section>:verifyingAccess?<div className="loading-page"><LoaderCircle className="spin"/> Verificando assinatura...</div>:premiumBlocked?<section className="premium-gate" role="status" aria-live="polite"><div className="premium-gate-symbol"><LockKeyhole size={36}/></div><h1>{gateTitle}</h1><p>{gateDescription}</p><div className="premium-gate-price">{new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format((premiumAccess?.priceCents??999)/100)} <span>/ 7 dias via Pix</span></div><button className="btn wide" onClick={()=>void generatePix()} disabled={generatingPix}><QrCode size={18}/> {generatingPix?'Gerando seu Pix...':gateExpired?'Gerar Pix para renovar':'Gerar Pix para ativar'}</button>{pixError&&<div className="premium-gate-error" role="alert">{pixError}</div>}<Link className="premium-gate-secondary" href="/app/assinatura">Ver assinatura, QR Code e pagamentos</Link><Link className="premium-gate-secondary" href="/app/configuracoes">Minha conta e meus dados</Link></section>:children}</main>
   </div>
   <nav className="mobile-bottom-nav">{navigation.slice(0,5).map(({href,label,Icon})=><Link key={href} href={href} className={pathname===href?'selected':''}><Icon size={20}/><span>{label==='Visão geral'?'Início':label==='Lançamentos'?'Ganhos':label}</span></Link>)}</nav>
  </div>;

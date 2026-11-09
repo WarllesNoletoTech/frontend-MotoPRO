@@ -1,6 +1,6 @@
 'use client';
 import {useCallback,useEffect,useState} from 'react';
-import {QrCode,ShieldCheck,RotateCcw,Crown,Copy,Check,CheckCircle2,Clock3,CalendarClock} from 'lucide-react';
+import {QrCode,ShieldCheck,RotateCcw,Crown,Copy,Check,CheckCircle2,Clock3,CalendarClock,AlertCircle} from 'lucide-react';
 import {PageHeader,Panel,Notice,Loading} from '@/components/UI';
 import {api} from '@/lib/api';
 
@@ -8,12 +8,13 @@ type Status={renewalAllowed:boolean;notice:{status:'none'|'active'|'expiring'|'e
 const money=(cents:number)=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(cents/100);
 export default function SubscriptionPage(){
  const [state,setState]=useState<Status|null>(null);
+ const [loading,setLoading]=useState(true);
  const [error,setError]=useState('');
  const [busy,setBusy]=useState('');
  const [message,setMessage]=useState('');
  const [copied,setCopied]=useState(false);
  const [benefits,setBenefits]=useState<string[]>([]);
- const load=useCallback(async()=>{try{setState(await api<Status>('/billing/me'));}catch(e){setError(e instanceof Error?e.message:'Falha ao obter assinatura');}},[]);
+ const load=useCallback(async()=>{setLoading(true);try{setState(await api<Status>('/billing/me'));setError('');}catch(e){setError(e instanceof Error?e.message:'Falha ao obter assinatura');}finally{setLoading(false);}},[]);
  useEffect(()=>{void load();api<{premiumBenefits:string[]}>('/public/settings').then(r=>setBenefits(r.premiumBenefits)).catch(()=>{});},[load]);
  // Enquanto houver Pix pendente, o frontend consulta a API periodicamente.
  // O backend consulta o Mercado Pago e confere valor, referência e status antes de aprovar.
@@ -70,7 +71,7 @@ export default function SubscriptionPage(){
  const pendingPix=state?.pendingPix && state.latestPix?.status==='pending' ? state.pendingPix:null;
  const expiredPix=!!pendingPix?.expiresAt && new Date(pendingPix.expiresAt).getTime()<=Date.now();
  return <><PageHeader eyebrow="MOTOPRO PREMIUM" title="Sua assinatura" description="Acesso Premium por 7 dias após cada Pix confirmado. Acompanhe pagamentos e validade." />
- {!state?<Loading/>:<div className="two-col">
+ {!state?(loading?<Loading/>:<section className="premium-gate" role="alert"><div className="premium-gate-symbol"><AlertCircle size={34}/></div><h2>Não foi possível consultar seu pagamento</h2><p>O sistema não conseguiu verificar sua assinatura agora. Isso não significa que ela venceu. Tente novamente para consultar o status ou gerar seu Pix.</p>{error&&<div className="premium-gate-error">{error}</div>}<button className="btn wide" onClick={()=>void load()}><RotateCcw size={17}/> Tentar novamente</button></section>):<div className="two-col">
   <Panel title="Premium" subtitle="Ferramentas adicionais para entregadores">
    <div className="payment-price">{money(state.plan.priceCents)} <span>/ semana</span></div>
    <div style={{margin:'12px 0 20px',fontSize:13,color:'var(--muted)'}}>Cada pagamento Pix confirmado concede 7 dias de Premium. Renovação manual, sem débito automático.</div>
@@ -84,6 +85,9 @@ export default function SubscriptionPage(){
    {message&&<div style={{marginTop:13}}><Notice kind="info">{message}</Notice></div>}
   </Panel>
   <Panel title="Pagamento por Pix" subtitle="Única forma de pagamento nesta fase">
+   {state.notice.status==='expired'&&<div className="pix-subscription-prompt expired" role="status"><CalendarClock size={24}/><div><strong>Sua assinatura venceu</strong><span>Seu acesso Premium expirou. Gere um Pix para renovar por mais 7 dias e liberar novamente todos os recursos do MotoPRO.</span></div></div>}
+   {state.notice.status==='none'&&<div className="pix-subscription-prompt none" role="status"><QrCode size={24}/><div><strong>Você ainda não ativou sua assinatura</strong><span>Faça o primeiro pagamento de {money(state.plan.priceCents)} pelo Pix para desbloquear todos os recursos do MotoPRO por 7 dias.</span></div></div>}
+   {state.notice.status==='expiring'&&<div className="pix-subscription-prompt expiring" role="status"><Clock3 size={24}/><div><strong>Seu Premium está perto de vencer</strong><span>Renove pelo Pix agora para acrescentar 7 dias sem perder o período restante.</span></div></div>}
    {approvedPix&&<div className="pix-approved" role="status" aria-live="polite">
      <div className="pix-approved-mark"><CheckCircle2 size={53} strokeWidth={2.1}/></div>
      <strong>Pagamento confirmado!</strong>
@@ -99,7 +103,7 @@ export default function SubscriptionPage(){
    <div className="stack">
     <div className="integration-item"><QrCode color="#39e5a5"/><div><strong>Pix</strong><small>Renovação manual a cada 7 dias, com liberação após confirmação do Pix.</small></div></div>
     {!state.renewalAllowed&&<Notice kind="info">Sua assinatura ainda tem mais de 48 horas. A renovação ficará disponível nos últimos dois dias de validade.</Notice>}
-    <button className="btn wide" disabled={!state.billingEnabled||!!busy||!state.renewalAllowed} onClick={()=>call('/billing/pix')}><QrCode size={17}/> {busy==='/billing/pix'?'Gerando cobrança...':`Gerar Pix de ${money(state.plan.priceCents)}`}</button>
+    <button className="btn wide" disabled={!state.billingEnabled||!!busy||!state.renewalAllowed} onClick={()=>call('/billing/pix')}><QrCode size={17}/> {busy==='/billing/pix'?'Gerando cobrança...':state.notice.status==='expired'?`Gerar Pix para renovar · ${money(state.plan.priceCents)}`:state.notice.status==='none'?`Gerar Pix e ativar · ${money(state.plan.priceCents)}`:`Gerar Pix de ${money(state.plan.priceCents)}`}</button>
     {pendingPix?.code&&!expiredPix&&<div className="pix-result">
       <strong>Seu Pix</strong><small>Confirme o pagamento no aplicativo do banco. O acesso é liberado após validação.</small>
       {pendingPix.qrCodeBase64&&<img src={`data:image/png;base64,${pendingPix.qrCodeBase64}`} alt="QR Code do Pix" width={170} height={170}/>}

@@ -211,3 +211,18 @@ body{background:var(--bg);color:var(--ink);font-synthesis:none}
 .premium-gate-price span{font-weight:500;font-size:.9rem;color:#bacbc2}
 .premium-gate .btn{max-width:360px;display:flex;justify-content:center;align-items:center;gap:9px;text-decoration:none}
 .premium-gate-secondary{color:#90dfbe;text-decoration:underline;font-size:.88rem}
+
+/* MotoPRO V3.8 - estado do Premium e ação direta de Pix no bloqueio. */
+.premium-gate-error{width:100%;border:1px solid #a85555;background:#351d22;color:#ffdbd8;border-radius:12px;padding:12px 14px;text-align:left;font-size:13px;line-height:1.5}
+.premium-gate .premium-gate-secondary{display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.premium-gate .btn:disabled{opacity:.65;cursor:wait}
+.pix-subscription-prompt{display:flex;align-items:flex-start;gap:13px;border:1px solid #297555;background:#103729;padding:16px;border-radius:15px;color:#d1ffe8;margin-bottom:17px}
+.pix-subscription-prompt>svg{flex-shrink:0;color:#42e5a8;margin-top:2px}
+.pix-subscription-prompt strong,.pix-subscription-prompt span{display:block}
+.pix-subscription-prompt strong{font-weight:800;font-size:14px;margin-bottom:5px}
+.pix-subscription-prompt span{font-size:12px;line-height:1.6;color:#bee5cf}
+.pix-subscription-prompt.expired{border-color:#9e6150;background:#36231d}
+.pix-subscription-prompt.expired>svg{color:#ffb092}
+.pix-subscription-prompt.expiring{border-color:#997939;background:#302719}
+.pix-subscription-prompt.expiring>svg{color:#f7d18d}
+.premium-gate-retry{border:0;background:transparent;color:#93ddbe;text-decoration:underline;cursor:pointer;font-size:13px;padding:4px}
