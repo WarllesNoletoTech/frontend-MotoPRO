@@ -4,7 +4,7 @@ import {QrCode,ShieldCheck,RotateCcw,Crown,Copy,Check,CheckCircle2,Clock3,Calend
 import {PageHeader,Panel,Notice,Loading} from '@/components/UI';
 import {api} from '@/lib/api';
 
-type Status={latestPix:null|{id:string;status:'pending'|'approved'|'rejected'|'refunded'|'canceled';amountCents:number;paidAt?:string|null};courtesyUntil?:string|null;plan:{priceCents:number;frequency:number;frequencyUnit:string;pixAutomaticAvailable:boolean};billingEnabled:boolean;subscription:null|{method:'pix'|'credit';status:string;activeUntil?:string;active:boolean;cancelAtPeriodEnd:boolean};pendingPix:null|{id:string;code?:string;qrCodeBase64?:string;ticketUrl?:string;expiresAt?:string}};
+type Status={renewalAllowed:boolean;notice:{status:'none'|'active'|'expiring'|'expired'|'trial'|'courtesy';title:string;message:string;activeUntil:string|null;remainingDays:number|null;renewalAllowed:boolean};latestPix:null|{id:string;status:'pending'|'approved'|'rejected'|'refunded'|'canceled';amountCents:number;paidAt?:string|null};courtesyUntil?:string|null;plan:{priceCents:number;frequency:number;frequencyUnit:string;pixAutomaticAvailable:boolean};billingEnabled:boolean;subscription:null|{method:'pix'|'credit';status:string;activeUntil?:string;active:boolean;cancelAtPeriodEnd:boolean};pendingPix:null|{id:string;code?:string;qrCodeBase64?:string;ticketUrl?:string;expiresAt?:string}};
 const money=(cents:number)=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(cents/100);
 export default function SubscriptionPage(){
  const [state,setState]=useState<Status|null>(null);
@@ -73,7 +73,11 @@ export default function SubscriptionPage(){
  {!state?<Loading/>:<div className="two-col">
   <Panel title="Premium" subtitle="Ferramentas adicionais para entregadores">
    <div className="payment-price">{money(state.plan.priceCents)} <span>/ semana</span></div>
-   <div style={{margin:'12px 0 20px',fontSize:13,color:'var(--muted)'}}>Cada pagamento Pix confirmado concede 7 dias de Premium. Sem renovação automática nem taxa de adesão.</div>
+   <div style={{margin:'12px 0 20px',fontSize:13,color:'var(--muted)'}}>Cada pagamento Pix confirmado concede 7 dias de Premium. Renovação manual, sem débito automático.</div>
+   {state.notice&&<div role="status" className={`renewal-alert ${state.notice.status}`}>
+    <div className="renewal-alert-icon">{state.notice.status==='expiring'?<Clock3 size={20}/>:state.notice.status==='expired'?<CalendarClock size={20}/>:<ShieldCheck size={20}/>}</div>
+    <div><strong>{state.notice.title}</strong><small>{state.notice.message}</small>{state.notice.activeUntil&&<small>Validade: {new Date(state.notice.activeUntil).toLocaleDateString('pt-BR')}{state.notice.remainingDays!==null?` · ${state.notice.remainingDays} dia(s) restante(s)`:''}</small>}</div>
+   </div>}
    {(benefits.length?benefits:['Controle financeiro pessoal e metas','Gestão da moto','Assistente inteligente']).map(x=><div className="feature-check" key={x}><Check size={17}/> {x}</div>)}
    <div style={{marginTop:20}}><Notice kind={state.subscription?.active||state.courtesyUntil?'success':'info'}>{state.courtesyUntil&&new Date(state.courtesyUntil)>new Date()?`Cortesia ativa até ${new Date(state.courtesyUntil).toLocaleDateString('pt-BR')}.`:state.subscription?.active?`Premium ativo até ${new Date(state.subscription.activeUntil!).toLocaleDateString('pt-BR')}.`:state.subscription?.status==='pending'?'Pagamento aguardando confirmação.':'O acesso Premium será liberado somente após pagamento confirmado.'}</Notice></div>
    {error&&<div style={{marginTop:13}}><Notice kind="error">{error}</Notice></div>}
@@ -94,7 +98,8 @@ export default function SubscriptionPage(){
    {expiredPix&&<Notice kind="info">Este QR Code venceu. Você pode gerar um novo Pix para continuar.</Notice>}
    <div className="stack">
     <div className="integration-item"><QrCode color="#39e5a5"/><div><strong>Pix</strong><small>Renovação manual a cada 7 dias, com liberação após confirmação do Pix.</small></div></div>
-    <button className="btn wide" disabled={!state.billingEnabled||!!busy||!!state.subscription?.active} onClick={()=>call('/billing/pix')}><QrCode size={17}/> {busy==='/billing/pix'?'Gerando cobrança...':`Gerar Pix de ${money(state.plan.priceCents)}`}</button>
+    {!state.renewalAllowed&&<Notice kind="info">Sua assinatura ainda tem mais de 48 horas. A renovação ficará disponível nos últimos dois dias de validade.</Notice>}
+    <button className="btn wide" disabled={!state.billingEnabled||!!busy||!state.renewalAllowed} onClick={()=>call('/billing/pix')}><QrCode size={17}/> {busy==='/billing/pix'?'Gerando cobrança...':`Gerar Pix de ${money(state.plan.priceCents)}`}</button>
     {pendingPix?.code&&!expiredPix&&<div className="pix-result">
       <strong>Seu Pix</strong><small>Confirme o pagamento no aplicativo do banco. O acesso é liberado após validação.</small>
       {pendingPix.qrCodeBase64&&<img src={`data:image/png;base64,${pendingPix.qrCodeBase64}`} alt="QR Code do Pix" width={170} height={170}/>}

@@ -191,3 +191,13 @@ body{background:var(--bg);color:var(--ink);font-synthesis:none}
 @keyframes pix-success-enter{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
 @keyframes pix-clock-pulse{50%{opacity:.4}}
 @media(prefers-reduced-motion:reduce){.pix-approved,.pix-clock{animation:none}}
+
+/* MotoPRO V3.6 — aviso de vencimento e renovação */
+.renewal-alert{display:flex;gap:12px;align-items:flex-start;padding:14px 15px;margin:14px 0;border:1px solid #255f44;background:#123526;border-radius:14px;color:#c6f5d8}
+.renewal-alert.expiring{border-color:#8a6b35;background:#302719;color:#ffe5ae}
+.renewal-alert.expired{border-color:#9e4542;background:#301c20;color:#ffd0d0}
+.renewal-alert-icon{padding:8px;border-radius:10px;background:#ffffff12;display:flex;flex-shrink:0}
+.renewal-alert strong,.renewal-alert small{display:block}.renewal-alert strong{font-size:13px;margin-bottom:5px}.renewal-alert small{font-size:12px;line-height:1.5;opacity:.9}
+.renewal-shell-banner{display:flex;align-items:center;gap:12px;padding:13px 16px;margin:0 0 17px;border-radius:14px;background:#342919;border:1px solid #7f602c;color:#ffe0a2;text-decoration:none}
+.renewal-shell-banner.expired{background:#341f21;border-color:#884144;color:#ffd0d0}
+.renewal-shell-banner span{flex:1}.renewal-shell-banner strong,.renewal-shell-banner small{display:block}.renewal-shell-banner strong{font-size:13px;margin-bottom:4px}.renewal-shell-banner small{font-size:12px;line-height:1.5}

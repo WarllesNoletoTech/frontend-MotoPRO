@@ -5,7 +5,7 @@ import {PageHeader,Panel,Loading,Notice,Empty} from '@/components/UI';
 import {api,formatMoney} from '@/lib/api';
 
 type Tab='overview'|'users'|'subscriptions'|'payments'|'campaigns'|'settings'|'audit';
-type Overview={users:number;blockedUsers:number;activeSubscribers:number;activeCourtesy:number;receivedCents:number;approvedPayments:number;weeklyPriceCents:number;billingEnabled:boolean;monthlyCampaign:{status:string;message:string}};
+type Overview={users:number;blockedUsers:number;activeSubscribers:number;expiringSubscribers:number;expiredSubscribers:number;activeCourtesy:number;receivedCents:number;approvedPayments:number;weeklyPriceCents:number;billingEnabled:boolean;monthlyCampaign:{status:string;message:string}};
 type User={id:string;name:string;email:string;blocked:boolean;blockReason:string;role:string;createdAt:string;lastLoginAt:string|null;trialEndsAt:string|null;subscription?:{status:string;method:string;activeUntil?:string}|null;courtesyUntil?:string|null};
 type Subscription={id:string;userId:string;name:string;email:string;method:string;status:string;activeUntil:string|null;cancelAtPeriodEnd:boolean;priceCents:number};
 type Payment={id:string;userId:string;name:string;method:string;status:string;amountCents:number;providerPaymentId:string;createdAt:string;paidAt:string|null};
@@ -20,7 +20,7 @@ const tabs:{id:Tab;label:string;Icon:typeof Users}[]=[
  {id:'audit',label:'Auditoria',Icon:History}
 ];
 const date=(v?:string|null)=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
-const stateLabel=(status:string)=>({active:'Ativa',pending:'Pendente',expired:'Vencida',canceled:'Cancelada',approved:'Aprovado',refunded:'Estornado',rejected:'Recusado',draft:'Rascunho',published:'Publicada',closed:'Encerrada'} as Record<string,string>)[status]||status;
+const stateLabel=(status:string)=>({active:'Ativa',pending:'Pendente',expired:'Vencida',expiring:'Vence em breve',canceled:'Cancelada',approved:'Aprovado',refunded:'Estornado',rejected:'Recusado',draft:'Rascunho',published:'Publicada',closed:'Encerrada'} as Record<string,string>)[status]||status;
 
 export default function AdminPage(){
  const [tab,setTab]=useState<Tab>('overview');
@@ -85,6 +85,8 @@ export default function AdminPage(){
     <div className="admin-stat-grid">{[
       {label:'Motoboys cadastrados',value:String(overview.users),Icon:Users},
       {label:'Assinaturas pagas ativas',value:String(overview.activeSubscribers),Icon:ShieldCheck},
+      {label:'Vencem em 48h',value:String(overview.expiringSubscribers),Icon:CalendarClock},
+      {label:'Assinaturas vencidas',value:String(overview.expiredSubscribers),Icon:History},
       {label:'Receita aprovada registrada',value:formatMoney(overview.receivedCents),Icon:Wallet},
       {label:'Contas bloqueadas',value:String(overview.blockedUsers),Icon:Ban}
     ].map(({label,value,Icon})=><div key={label} className="admin-stat"><Icon size={18}/><small>{label}</small><strong>{value}</strong></div>)}</div>
@@ -100,7 +102,7 @@ export default function AdminPage(){
     </Panel>
    </>}
    {tab==='subscriptions'&&<Panel title="Assinaturas" subtitle="Vencimento, método e estado confirmado no banco">
-     <div className="admin-toolbar"><select className="select" aria-label="Filtrar assinaturas" value={subStatus} onChange={e=>{setSubStatus(e.target.value);setSubPage(1);}}><option value="all">Todos os status</option><option value="active">Ativas</option><option value="pending">Pendentes</option><option value="expired">Vencidas</option><option value="canceled">Canceladas</option></select></div>
+     <div className="admin-toolbar"><select className="select" aria-label="Filtrar assinaturas" value={subStatus} onChange={e=>{setSubStatus(e.target.value);setSubPage(1);}}><option value="all">Todos os status</option><option value="active">Ativas</option><option value="expiring">Vencem em 48h</option><option value="pending">Pendentes</option><option value="expired">Vencidas</option><option value="canceled">Canceladas</option></select></div>
      <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Assinante</th><th>Pagamento</th><th>Status</th><th>Valor contratado</th><th>Acesso até</th></tr></thead><tbody>{subscriptions?.items.map(s=><tr key={s.id}><td><strong>{s.name}</strong><small>{s.email}</small></td><td>{s.method==='credit'?'Crédito':'Pix'}</td><td><span className="admin-status">{stateLabel(s.status)}</span>{s.cancelAtPeriodEnd&&<small>Renovação cancelada</small>}</td><td>{formatMoney(s.priceCents)}</td><td>{date(s.activeUntil)}</td></tr>)}</tbody></table></div>
      {!subscriptions?.items.length&&<Empty message="Nenhuma assinatura encontrada"/>}
      <Pager page={subPage} total={subscriptions?.total??0} pageSize={15} onChange={setSubPage}/>
