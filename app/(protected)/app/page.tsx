@@ -6,7 +6,7 @@ import {api,formatMoney,dateLabel,categoryLabel,type Dashboard,type Entry} from 
 import {PageHeader,Panel,Loading,Notice,Empty} from '@/components/UI';
 export default function DashboardPage(){
  const [data,setData]=useState<Dashboard|null>(null),[entries,setEntries]=useState<Entry[]>([]),[error,setError]=useState('');
- const load=()=>{setError('');Promise.all([api<Dashboard>('/dashboard'),api<{items:Entry[]}>('/entries?limit=5')]).then(([d,l])=>{setData(d);setEntries(l.items);}).catch(e=>setError(e.message));};
+ const load=async()=>{setError('');try{await api('/integrations/rappidex/sync',{method:'POST',body:JSON.stringify({})});}catch{/* Integração opcional não bloqueia financeiro manual. */}try{const [d,l]=await Promise.all([api<Dashboard>('/dashboard'),api<{items:Entry[]}>('/entries?limit=5')]);setData(d);setEntries(l.items);}catch(e:any){setError(e.message);}};
  useEffect(()=>{load();},[]);
  const max=Math.max(1,...(data?.byDay.map(d=>d.incomeCents)||[]));
  const goal=data?.goal?.weeklyTargetCents||0;
