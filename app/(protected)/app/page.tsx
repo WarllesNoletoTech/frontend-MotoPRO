@@ -26,7 +26,7 @@ export default function DashboardPage(){
     <p className="tiny-note">Barras representam receitas, não o lucro líquido.</p>
    </Panel>
    <div className="stack">
-    <Panel title="Minha meta" subtitle="Lucro estimado da semana" action={<Target size={19} color="#2ba56d"/>}>
+    <Panel title="Minha meta" subtitle="Lucro estimado da semana" action={<Target size={19} color="#b88738"/>}>
      {goal?<><div className="row-between"><strong style={{font:'700 27px Outfit'}}>{progress}%</strong><span className="text-muted" style={{fontSize:12}}>Meta de {formatMoney(goal)}</span></div><div className="progress-bar"><div className="progress-fill" style={{width:`${progress}%`}}/></div><div className="progress-info"><span>{formatMoney(Math.max(0,data.profitCents))}</span><span className="text-muted">Faltam {formatMoney(Math.max(0,goal-data.profitCents))}</span></div></>:<><p className="text-muted" style={{fontSize:13,marginBottom:15}}>Defina quanto deseja lucrar por semana e acompanhe sua evolução.</p><Link href="/app/metas" className="btn secondary">Definir meta</Link></>}
     </Panel>
     <Panel title="Acesso rápido"><div className="stack-sm"><Link href="/app/lancamentos" className="btn wide secondary"><Plus size={17}/> Registrar lançamento</Link><Link href="/app/moto" className="btn wide outline"><Fuel size={17}/> Minha moto</Link></div></Panel>

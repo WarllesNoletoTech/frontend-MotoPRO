@@ -1,5 +1,5 @@
 'use client';
-import {useCallback,useEffect,useState} from 'react';
+import {useCallback,useEffect,useRef,useState} from 'react';
 import {QrCode,ShieldCheck,RotateCcw,Crown,Copy,Check,CheckCircle2,Clock3,CalendarClock,AlertCircle} from 'lucide-react';
 import {PageHeader,Panel,Notice,Loading} from '@/components/UI';
 import {api} from '@/lib/api';
@@ -14,6 +14,8 @@ export default function SubscriptionPage(){
  const [busy,setBusy]=useState('');
  const [message,setMessage]=useState('');
  const [copied,setCopied]=useState(false);
+ const qrRef=useRef<HTMLDivElement|null>(null);
+ const [focusGeneratedPix,setFocusGeneratedPix]=useState(false);
  const [benefits,setBenefits]=useState<string[]>([]);
  const load=useCallback(async()=>{setLoading(true);try{setState(readBillingStatus(await api<unknown>('/billing/me')));setError('');}catch(e){setState(null);setError(e instanceof Error?e.message:'Falha ao obter assinatura');}finally{setLoading(false);}},[]);
  useEffect(()=>{void load();api<{premiumBenefits?:unknown}>('/public/settings').then(r=>setBenefits(Array.isArray(r.premiumBenefits)?r.premiumBenefits.filter((item):item is string=>typeof item==='string'):[])).catch(()=>setBenefits([]));},[load]);
@@ -76,7 +78,7 @@ export default function SubscriptionPage(){
    await api<unknown>(path,{method:'POST'});
    const updated=readBillingStatus(await api<unknown>('/billing/me'));
    setState(updated);
-   if(path==='/billing/pix')setMessage('Pix gerado. A confirmação será verificada automaticamente.');
+   if(path==='/billing/pix'){setMessage('Pix gerado. A confirmação será verificada automaticamente.');setFocusGeneratedPix(true);}
    else if(path==='/billing/refresh' && updated.latestPix?.status==='pending')setMessage('Pagamento ainda pendente. Vamos continuar verificando automaticamente.');
   }catch(e){setError(e instanceof Error?e.message:'Não foi possível completar a operação');}finally{setBusy('');}
  };
@@ -84,6 +86,11 @@ export default function SubscriptionPage(){
  const approvedPix=state?.latestPix?.status==='approved' && state.subscription?.active===true && state.subscription.method==='pix';
  const pendingPix=state?.pendingPix && state.latestPix?.status==='pending' ? state.pendingPix:null;
  const expiredPix=!!pendingPix?.expiresAt && new Date(pendingPix.expiresAt).getTime()<=Date.now();
+ useEffect(()=>{
+  if(!focusGeneratedPix||!pendingPix?.id||expiredPix)return;
+  const frame=window.requestAnimationFrame(()=>{qrRef.current?.scrollIntoView({behavior:'smooth',block:'center'});setFocusGeneratedPix(false);});
+  return()=>window.cancelAnimationFrame(frame);
+ },[focusGeneratedPix,pendingPix?.id,expiredPix]);
  return <><PageHeader eyebrow="MOTOPRO PREMIUM" title="Sua assinatura" description="Acesso Premium por 7 dias após cada Pix confirmado. Acompanhe pagamentos e validade." />
  {!state?(loading?<Loading/>:<section className="premium-gate" role="alert"><div className="premium-gate-symbol"><AlertCircle size={34}/></div><h2>Não foi possível consultar seu pagamento</h2><p>Não foi possível confirmar sua assinatura. Isso não significa que ela venceu. Caso o problema seja uma atualização pendente no Heroku, o administrador deverá publicar o backend compatível antes de tentar novamente.</p>{error&&<div className="premium-gate-error">{error}</div>}<button className="btn wide" onClick={()=>void load()}><RotateCcw size={17}/> Tentar novamente</button></section>):<div className="two-col">
   <Panel title="Premium" subtitle="Todos os recursos operacionais para entregadores">
@@ -100,10 +107,6 @@ export default function SubscriptionPage(){
    {message&&<div style={{marginTop:13}}><Notice kind="info">{message}</Notice></div>}
   </Panel>
   <Panel title="Pagamento por Pix" subtitle="Única forma de pagamento nesta fase">
-   {state.notice.status==='expired'&&<div className="pix-subscription-prompt expired" role="status"><CalendarClock size={24}/><div><strong>Sua assinatura venceu</strong><span>Seu acesso Premium expirou. Gere um Pix para renovar por mais 7 dias e liberar novamente todos os recursos do MotoPRO.</span></div></div>}
-   {state.notice.status==='none'&&<div className="pix-subscription-prompt none" role="status"><QrCode size={24}/><div><strong>Você ainda não ativou sua assinatura</strong><span>Faça o primeiro pagamento de {money(state.plan.priceCents)} pelo Pix para desbloquear todos os recursos do MotoPRO por 7 dias.</span></div></div>}
-   {state.notice.status==='trial'&&<div className="pix-subscription-prompt none" role="status"><ShieldCheck size={24}/><div><strong>Seu período gratuito está ativo</strong><span>O administrador configurou {state.trialDays??0} dia(s) desde seu cadastro. Após o vencimento, use o Pix para continuar utilizando todos os recursos.</span></div></div>}
-   {state.notice.status==='expiring'&&<div className="pix-subscription-prompt expiring" role="status"><Clock3 size={24}/><div><strong>Seu Premium está perto de vencer</strong><span>Renove pelo Pix agora para acrescentar 7 dias sem perder o período restante.</span></div></div>}
    {approvedPix&&<div className="pix-approved" role="status" aria-live="polite">
      <div className="pix-approved-mark"><CheckCircle2 size={53} strokeWidth={2.1}/></div>
      <strong>Pagamento confirmado!</strong>
@@ -111,21 +114,28 @@ export default function SubscriptionPage(){
      <div className="pix-approved-validity"><ShieldCheck size={18}/> Premium liberado até {new Date(state.subscription!.activeUntil!).toLocaleDateString('pt-BR')}</div>
      {state.latestPix?.paidAt&&<small>Confirmado em {new Date(state.latestPix.paidAt).toLocaleString('pt-BR')}</small>}
    </div>}
+   <div className="pix-payment-action">
+    {!state.renewalAllowed&&<Notice kind="info">Sua assinatura ainda tem mais de 48 horas. A renovação ficará disponível nos últimos dois dias de validade.</Notice>}
+    <button className="btn wide" disabled={!state.billingEnabled||!!busy||!state.renewalAllowed||!!(pendingPix&&!expiredPix)} onClick={()=>call('/billing/pix')}><QrCode size={17}/> {busy==='/billing/pix'?'Gerando cobrança...':pendingPix&&!expiredPix?'Pix já gerado · QR Code abaixo':state.notice.status==='expired'?`Gerar Pix para renovar · ${money(state.plan.priceCents)}`:state.notice.status==='none'?`Gerar Pix e ativar · ${money(state.plan.priceCents)}`:`Gerar Pix de ${money(state.plan.priceCents)}`}</button>
+   </div>
+   {pendingPix&&!expiredPix&&(pendingPix.code||pendingPix.qrCodeBase64)&&<div ref={qrRef} id="pix-qrcode" className="pix-result pix-result-prominent" role="region" aria-label="Seu código Pix para pagamento">
+      <div className="pix-result-heading"><QrCode size={22}/> Seu Pix está pronto</div>
+      <small>Escaneie o QR Code com o aplicativo do banco ou utilize o código Copia e Cola. O Premium será liberado após a confirmação.</small>
+      {pendingPix.qrCodeBase64&&<img src={`data:image/png;base64,${pendingPix.qrCodeBase64}`} alt="QR Code Pix para pagamento do MotoPRO" width={226} height={226}/>}
+      {pendingPix.code&&<><div className="pix-code" aria-label="Código Pix Copia e Cola">{pendingPix.code}</div><button className="btn wide" onClick={copy}>{copied?<Check size={16}/>:<Copy size={16}/>} {copied?'Código copiado!':'Copiar código Pix'}</button></>}
+      {pendingPix.expiresAt&&<small className="pix-expiry">Válido até {new Date(pendingPix.expiresAt).toLocaleString('pt-BR')}</small>}
+    </div>}
    {pendingPix&&!expiredPix&&<div className="pix-awaiting" role="status" aria-live="polite">
      <Clock3 size={21} className="pix-clock"/>
      <div><strong>Aguardando pagamento</strong><small>Assim que o Mercado Pago confirmar, aparecerá um OK verde nesta tela. Verificação automática ativada.</small></div>
    </div>}
    {expiredPix&&<Notice kind="info">Este QR Code venceu. Você pode gerar um novo Pix para continuar.</Notice>}
+   {state.notice.status==='expired'&&<div className="pix-subscription-prompt expired" role="status"><CalendarClock size={24}/><div><strong>Sua assinatura venceu</strong><span>Seu acesso Premium expirou. Gere um Pix para renovar por mais 7 dias e liberar novamente todos os recursos do MotoPRO.</span></div></div>}
+   {state.notice.status==='none'&&<div className="pix-subscription-prompt none" role="status"><QrCode size={24}/><div><strong>Você ainda não ativou sua assinatura</strong><span>Faça o primeiro pagamento de {money(state.plan.priceCents)} pelo Pix para desbloquear todos os recursos do MotoPRO por 7 dias.</span></div></div>}
+   {state.notice.status==='trial'&&<div className="pix-subscription-prompt none" role="status"><ShieldCheck size={24}/><div><strong>Seu período gratuito está ativo</strong><span>O administrador configurou {state.trialDays??0} dia(s) desde seu cadastro. Após o vencimento, use o Pix para continuar utilizando todos os recursos.</span></div></div>}
+   {state.notice.status==='expiring'&&<div className="pix-subscription-prompt expiring" role="status"><Clock3 size={24}/><div><strong>Seu Premium está perto de vencer</strong><span>Renove pelo Pix agora para acrescentar 7 dias sem perder o período restante.</span></div></div>}
    <div className="stack">
-    <div className="integration-item"><QrCode color="#39e5a5"/><div><strong>Pix</strong><small>Renovação manual a cada 7 dias, com liberação após confirmação do Pix.</small></div></div>
-    {!state.renewalAllowed&&<Notice kind="info">Sua assinatura ainda tem mais de 48 horas. A renovação ficará disponível nos últimos dois dias de validade.</Notice>}
-    <button className="btn wide" disabled={!state.billingEnabled||!!busy||!state.renewalAllowed} onClick={()=>call('/billing/pix')}><QrCode size={17}/> {busy==='/billing/pix'?'Gerando cobrança...':state.notice.status==='expired'?`Gerar Pix para renovar · ${money(state.plan.priceCents)}`:state.notice.status==='none'?`Gerar Pix e ativar · ${money(state.plan.priceCents)}`:`Gerar Pix de ${money(state.plan.priceCents)}`}</button>
-    {pendingPix?.code&&!expiredPix&&<div className="pix-result">
-      <strong>Seu Pix</strong><small>Confirme o pagamento no aplicativo do banco. O acesso é liberado após validação.</small>
-      {pendingPix.qrCodeBase64&&<img src={`data:image/png;base64,${pendingPix.qrCodeBase64}`} alt="QR Code do Pix" width={170} height={170}/>}
-      <div className="pix-code">{pendingPix.code}</div><button className="btn secondary wide" onClick={copy}>{copied?<Check size={16}/>:<Copy size={16}/>} {copied?'Copiado':'Copiar Pix'}</button>
-      {pendingPix.expiresAt&&<small>Válido até {new Date(pendingPix.expiresAt).toLocaleString('pt-BR')}</small>}
-    </div>}
+    <div className="integration-item"><QrCode color="var(--brand-orange)"/><div><strong>Pix</strong><small>Renovação manual a cada 7 dias, com liberação após confirmação do Pix.</small></div></div>
     <button className="btn outline wide" disabled={!state.billingEnabled||!!busy} onClick={()=>call('/billing/refresh')}><RotateCcw size={17}/> Verificar confirmação do pagamento</button>
     {state.subscription?.method==='credit'&&!state.subscription.cancelAtPeriodEnd&&<button className="btn danger wide" disabled={!state.billingEnabled||!!busy} onClick={()=>{if(window.confirm('Cancelar futuras cobranças no crédito?'))void call('/billing/cancel');}}>Cancelar renovação automática</button>}
     {!state.billingEnabled&&<Notice>Os pagamentos estão em homologação. Nenhuma cobrança será iniciada até a configuração ser habilitada pelo administrador.</Notice>}
@@ -133,6 +143,6 @@ export default function SubscriptionPage(){
    </div>
   </Panel>
  </div>}
- <div style={{marginTop:18}}><Panel title="Premiação e benefícios" subtitle="Campanhas e recompensas do MotoPRO"><div className="integration-item"><Crown color="#39e5a5"/><div><strong>Premiação mensal em preparação</strong><small>O prêmio, o regulamento e eventuais autorizações legais serão divulgados antes de qualquer campanha. A assinatura não concede automaticamente participação em sorteios.</small></div></div><div className="integration-item" style={{marginTop:12}}><CalendarClock color="#39e5a5"/><div><strong>Transparência</strong><small>Nenhum sorteio está ativo, e o aplicativo não faz seleção aleatória de ganhadores.</small></div></div></Panel></div>
+ <div style={{marginTop:18}}><Panel title="Premiação e benefícios" subtitle="Campanhas e recompensas do MotoPRO"><div className="integration-item"><Crown color="#e5a743"/><div><strong>Premiação mensal em preparação</strong><small>O prêmio, o regulamento e eventuais autorizações legais serão divulgados antes de qualquer campanha. A assinatura não concede automaticamente participação em sorteios.</small></div></div><div className="integration-item" style={{marginTop:12}}><CalendarClock color="#e5a743"/><div><strong>Transparência</strong><small>Nenhum sorteio está ativo, e o aplicativo não faz seleção aleatória de ganhadores.</small></div></div></Panel></div>
  </>;
 }
