@@ -144,3 +144,34 @@ body{background:var(--bg);color:var(--ink);font-synthesis:none}
 .pix-result{background:#12231e;border:1px solid #285340;border-radius:14px;padding:17px;display:flex;flex-direction:column;gap:11px;align-items:flex-start}
 .pix-result strong{color:#dbfff0}.pix-result small{color:#a2bcb0;line-height:1.5}.pix-result img{border-radius:10px;background:white;padding:7px;align-self:center}
 .pix-code{width:100%;word-break:break-all;font:12px/1.6 ui-monospace,monospace;color:#b9eacb;padding:12px;border:1px dashed #377457;background:#091510;border-radius:10px}
+/* MotoPRO V3.2 — Administração (preto / verde-esmeralda) */
+.admin-tabs{display:flex;gap:7px;overflow:auto;padding:5px 0 14px;margin:0 0 16px;scrollbar-width:thin}
+.admin-tabs button{border:1px solid #304c3e;background:#14221e;color:#93afa0;padding:10px 13px;border-radius:12px;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;font-weight:700;font-size:12px}
+.admin-tabs button:hover{border-color:#63c898;color:#fff}.admin-tabs button.active{background:#1b4935;border-color:#50df9b;color:#baffd8}
+.admin-stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:19px}
+.admin-stat{min-height:132px;border:1px solid #30483d;background:linear-gradient(145deg,#162820,#101b18);padding:20px;border-radius:17px;display:flex;flex-direction:column;gap:8px;color:#6febac}
+.admin-stat small{color:#a6bfb0;font-size:11px;font-weight:700}.admin-stat strong{font:750 clamp(21px,2vw,29px) Outfit;color:#eefdf4}
+.admin-small{color:#91aa9c;font-size:12px;line-height:1.6;margin:14px 0 0}
+.admin-toolbar{display:flex;align-items:end;flex-wrap:wrap;gap:10px;margin:0 0 18px}.admin-toolbar .select{width:auto;min-width:160px;padding:11px;border-radius:10px}
+.admin-search{display:flex;gap:8px;align-items:center;flex:1;min-width:240px;color:#68daac}.admin-search input{flex:1;min-width:0}
+.admin-table-wrap{overflow-x:auto;max-width:100%}.admin-table{width:100%;border-collapse:collapse;white-space:nowrap;text-align:left;font-size:12px}
+.admin-table th{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#8baa99;border-bottom:1px solid #385344;padding:12px}
+.admin-table td{border-bottom:1px solid #21372c;padding:13px 12px;color:#d5eadd;vertical-align:middle}
+.admin-table td strong,.admin-table td small{display:block}.admin-table td small{font-size:11px;color:#89a494;margin-top:3px}
+.admin-table code{font-size:10px;color:#8fe3b6}.admin-status{display:inline-block;font-size:10px;font-weight:800;color:#b8f7d6;border:1px solid #2c6949;border-radius:20px;padding:4px 9px;background:#153326}
+.admin-status.bad{color:#f6bebc;background:#3a2221;border-color:#834844}.admin-status.good{color:#b8f7d6}
+.admin-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.admin-actions .btn{min-height:34px;padding:8px 12px;font-size:11px}
+.admin-pager{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:16px;color:#91a99b;font-size:12px}.admin-pager>div{display:flex;gap:7px}
+.admin-date-label{display:flex;flex-direction:column;gap:5px;font-size:11px;color:#9cb3a5}.admin-date-label input{color-scheme:dark;padding:9px;max-width:160px}
+.admin-result{background:#18372a;border:1px solid #317c52;border-radius:14px;padding:15px 18px;margin:10px 0 16px;display:flex;align-items:baseline;gap:15px;flex-wrap:wrap}
+.admin-result strong{font:750 26px Outfit;color:#bcfbd8}.admin-result span{font-size:12px;color:#9fc6ae}
+.admin-form{display:grid;gap:14px}.admin-form label,.admin-modal label{display:grid;gap:6px;color:#abc7b6;font-size:12px;font-weight:700}
+.admin-form .input,.admin-form .textarea,.admin-modal .input,.admin-modal .textarea{width:100%;border-radius:11px;padding:11px}
+.admin-form-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}.admin-toggle{display:flex!important;align-items:center;gap:10px}
+.admin-toggle input{accent-color:#57eaa8;width:18px;height:18px}.admin-campaign-grid{grid-template-columns:1fr 1fr}
+.admin-campaign{padding:15px 0;border-bottom:1px solid #294236;display:grid;gap:6px}.admin-campaign strong{color:#dffff0}.admin-campaign small{color:#77c99d}.admin-campaign p{font-size:12px;color:#adc6b5;line-height:1.6}
+.admin-modal-overlay{position:fixed;inset:0;background:#000c;z-index:80;display:grid;place-items:center;padding:20px}
+.admin-modal{background:#14211c;border:1px solid #468063;box-shadow:0 22px 60px #0009;border-radius:20px;max-width:480px;width:100%;padding:26px;display:grid;gap:16px}
+.admin-modal h2{color:#dffff0;font-size:22px}.admin-modal p{font-size:12px;color:#aac1b4}
+@media(max-width:1050px){.admin-stat-grid{grid-template-columns:repeat(2,1fr)}.admin-campaign-grid{grid-template-columns:1fr}}
+@media(max-width:550px){.admin-stat-grid{gap:8px}.admin-stat{padding:14px;min-height:115px}.admin-form-cols{grid-template-columns:1fr}.admin-pager{flex-direction:column;align-items:start}}

@@ -4,7 +4,7 @@ import {CreditCard,QrCode,ShieldCheck,RotateCcw,Crown,Copy,Check,CalendarClock} 
 import {PageHeader,Panel,Notice,Loading} from '@/components/UI';
 import {api} from '@/lib/api';
 
-type Status={plan:{priceCents:number;frequency:number;frequencyUnit:string;pixAutomaticAvailable:boolean};billingEnabled:boolean;subscription:null|{method:'pix'|'credit';status:string;activeUntil?:string;active:boolean;cancelAtPeriodEnd:boolean};pendingPix:null|{id:string;code?:string;qrCodeBase64?:string;ticketUrl?:string;expiresAt?:string}};
+type Status={courtesyUntil?:string|null;plan:{priceCents:number;frequency:number;frequencyUnit:string;pixAutomaticAvailable:boolean};billingEnabled:boolean;subscription:null|{method:'pix'|'credit';status:string;activeUntil?:string;active:boolean;cancelAtPeriodEnd:boolean};pendingPix:null|{id:string;code?:string;qrCodeBase64?:string;ticketUrl?:string;expiresAt?:string}};
 const money=(cents:number)=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(cents/100);
 export default function SubscriptionPage(){
  const [state,setState]=useState<Status|null>(null);
@@ -12,8 +12,9 @@ export default function SubscriptionPage(){
  const [busy,setBusy]=useState('');
  const [message,setMessage]=useState('');
  const [copied,setCopied]=useState(false);
+ const [benefits,setBenefits]=useState<string[]>([]);
  const load=useCallback(async()=>{try{setState(await api<Status>('/billing/me'));}catch(e){setError(e instanceof Error?e.message:'Falha ao obter assinatura');}},[]);
- useEffect(()=>{void load();},[load]);
+ useEffect(()=>{void load();api<{premiumBenefits:string[]}>('/public/settings').then(r=>setBenefits(r.premiumBenefits)).catch(()=>{});},[load]);
  const call=async(path:string)=>{
   setError('');setMessage('');setBusy(path);
   try{
@@ -23,20 +24,20 @@ export default function SubscriptionPage(){
   }catch(e){setError(e instanceof Error?e.message:'Não foi possível completar a operação');}finally{setBusy('');}
  };
  const copy=async()=>{if(state?.pendingPix?.code){await navigator.clipboard.writeText(state.pendingPix.code);setCopied(true);window.setTimeout(()=>setCopied(false),2000);}};
- return <><PageHeader eyebrow="MOTOPRO PREMIUM" title="Sua assinatura" description="Assinatura semanal de R$ 9,99. Pague pelo Mercado Pago e acompanhe seu acesso." />
+ return <><PageHeader eyebrow="MOTOPRO PREMIUM" title="Sua assinatura" description="Assinatura semanal pelo Mercado Pago. Acompanhe seus pagamentos e o prazo de acesso." />
  {!state?<Loading/>:<div className="two-col">
   <Panel title="Premium" subtitle="Ferramentas adicionais para entregadores">
    <div className="payment-price">{money(state.plan.priceCents)} <span>/ semana</span></div>
    <div style={{margin:'12px 0 20px',fontSize:13,color:'var(--muted)'}}>Valor cobrado a cada 7 dias. Sem taxa de adesão.</div>
-   {['Controle financeiro pessoal e metas','Relatório de receitas e despesas','Controle de combustível e manutenção','Assistente inteligente quando habilitado'].map(x=><div className="feature-check" key={x}><Check size={17}/> {x}</div>)}
-   <div style={{marginTop:20}}><Notice kind={state.subscription?.active?'success':'info'}>{state.subscription?.active?`Premium ativo até ${new Date(state.subscription.activeUntil!).toLocaleDateString('pt-BR')}.`:state.subscription?.status==='pending'?'Pagamento ou autorização aguardando confirmação.':'O acesso Premium será liberado somente após pagamento confirmado.'}</Notice></div>
+   {(benefits.length?benefits:['Controle financeiro pessoal e metas','Gestão da moto','Assistente inteligente']).map(x=><div className="feature-check" key={x}><Check size={17}/> {x}</div>)}
+   <div style={{marginTop:20}}><Notice kind={state.subscription?.active||state.courtesyUntil?'success':'info'}>{state.courtesyUntil&&new Date(state.courtesyUntil)>new Date()?`Cortesia ativa até ${new Date(state.courtesyUntil).toLocaleDateString('pt-BR')}.`:state.subscription?.active?`Premium ativo até ${new Date(state.subscription.activeUntil!).toLocaleDateString('pt-BR')}.`:state.subscription?.status==='pending'?'Pagamento ou autorização aguardando confirmação.':'O acesso Premium será liberado somente após pagamento confirmado.'}</Notice></div>
    {error&&<div style={{marginTop:13}}><Notice kind="error">{error}</Notice></div>}
    {message&&<div style={{marginTop:13}}><Notice kind="success">{message}</Notice></div>}
   </Panel>
   <Panel title="Formas de pagamento" subtitle="Mercado Pago — sem cartão de débito">
    <div className="stack">
     <div className="integration-item"><QrCode color="#39e5a5"/><div><strong>Pix</strong><small>Pagamento avulso por 7 dias; não é Pix Automático.</small></div></div>
-    <button className="btn wide" disabled={!state.billingEnabled||!!busy||!!state.subscription?.active} onClick={()=>call('/billing/pix')}><QrCode size={17}/> {busy==='/billing/pix'?'Gerando cobrança...':'Gerar Pix de R$ 9,99'}</button>
+    <button className="btn wide" disabled={!state.billingEnabled||!!busy||!!state.subscription?.active} onClick={()=>call('/billing/pix')}><QrCode size={17}/> {busy==='/billing/pix'?'Gerando cobrança...':`Gerar Pix de ${money(state.plan.priceCents)}`}</button>
     {state.pendingPix?.code&&<div className="pix-result">
       <strong>Seu Pix</strong><small>Confirme o pagamento no aplicativo do banco. O acesso é liberado após validação.</small>
       {state.pendingPix.qrCodeBase64&&<img src={`data:image/png;base64,${state.pendingPix.qrCodeBase64}`} alt="QR Code do Pix" width={170} height={170}/>}
