@@ -201,3 +201,13 @@ body{background:var(--bg);color:var(--ink);font-synthesis:none}
 .renewal-shell-banner{display:flex;align-items:center;gap:12px;padding:13px 16px;margin:0 0 17px;border-radius:14px;background:#342919;border:1px solid #7f602c;color:#ffe0a2;text-decoration:none}
 .renewal-shell-banner.expired{background:#341f21;border-color:#884144;color:#ffd0d0}
 .renewal-shell-banner span{flex:1}.renewal-shell-banner strong,.renewal-shell-banner small{display:block}.renewal-shell-banner strong{font-size:13px;margin-bottom:4px}.renewal-shell-banner small{font-size:12px;line-height:1.5}
+
+/* MotoPRO V3.7 - bloqueio de funcionalidades Premium (somente apresentação). */
+.premium-gate{max-width:510px;margin:48px auto;padding:34px 28px;border:1px solid rgba(75,220,165,.24);background:linear-gradient(140deg,#15231f,#101917);border-radius:24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px;box-shadow:0 16px 50px rgba(0,0,0,.16)}
+.premium-gate-symbol{width:82px;height:82px;border-radius:25px;background:rgba(57,229,165,.13);color:#39e5a5;display:grid;place-items:center}
+.premium-gate h1{font-size:clamp(1.35rem,3vw,1.9rem);margin:0;color:#f7fdf9}
+.premium-gate p{color:#b1c7bd;line-height:1.6;margin:0}
+.premium-gate-price{font-weight:800;font-size:1.7rem;color:#39e5a5}
+.premium-gate-price span{font-weight:500;font-size:.9rem;color:#bacbc2}
+.premium-gate .btn{max-width:360px;display:flex;justify-content:center;align-items:center;gap:9px;text-decoration:none}
+.premium-gate-secondary{color:#90dfbe;text-decoration:underline;font-size:.88rem}
