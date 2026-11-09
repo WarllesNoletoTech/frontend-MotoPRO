@@ -1,0 +1,28 @@
+'use client';
+import {useEffect,useState} from 'react';
+import {Bike,Plus,CheckCircle2,Wrench,Fuel} from 'lucide-react';
+import {api} from '@/lib/api';
+import {PageHeader,Panel,Notice,Loading,Empty} from '@/components/UI';
+type Motorcycle={_id:string;model:string;year?:number;odometerKm:number;kmPerLiter?:number};
+type Reminder={_id:string;label:string;dueOn?:string;dueKm?:number};
+export default function MotoPage(){
+ const [bike,setBike]=useState({model:'',year:'',odometerKm:'',kmPerLiter:''});
+ const [saved,setSaved]=useState<Motorcycle|null>(null),[reminders,setReminders]=useState<Reminder[]>([]),[loading,setLoading]=useState(true);
+ const [rem,setRem]=useState({label:'',dueOn:'',dueKm:''});
+ const [busy,setBusy]=useState(false),[error,setError]=useState(''),[success,setSuccess]=useState('');
+ const load=async()=>{try{const r=await api<{motorcycle:Motorcycle|null;reminders:Reminder[]}>('/moto');setSaved(r.motorcycle);setReminders(r.reminders);if(r.motorcycle)setBike({model:r.motorcycle.model,year:String(r.motorcycle.year||''),odometerKm:String(r.motorcycle.odometerKm||0),kmPerLiter:String(r.motorcycle.kmPerLiter||'')});}catch(e){setError((e as Error).message);}finally{setLoading(false);}};
+ useEffect(()=>{load();},[]);
+ const saveBike=async(e:React.FormEvent)=>{e.preventDefault();setBusy(true);setError('');try{await api('/moto',{method:'PUT',body:JSON.stringify({model:bike.model,year:bike.year?Number(bike.year):undefined,odometerKm:Number(bike.odometerKm||0),kmPerLiter:bike.kmPerLiter?Number(bike.kmPerLiter.replace(',','.')):undefined})});setSuccess('Dados da moto atualizados.');await load();}catch(e){setError((e as Error).message);}finally{setBusy(false);}};
+ const addReminder=async(e:React.FormEvent)=>{e.preventDefault();setError('');try{await api('/moto/reminders',{method:'POST',body:JSON.stringify({label:rem.label,dueOn:rem.dueOn||undefined,dueKm:rem.dueKm?Number(rem.dueKm):undefined})});setRem({label:'',dueOn:'',dueKm:''});setSuccess('Lembrete criado.');await load();}catch(e){setError((e as Error).message);}};
+ const complete=async(id:string)=>{try{await api(`/moto/reminders/${id}/done`,{method:'PATCH'});await load();}catch(e){setError((e as Error).message);}};
+ return <><PageHeader eyebrow="CONTROLE DA MOTO" title="Minha moto" description="Tenha a quilometragem e as próximas manutenções organizadas."/>
+ {loading?<Loading/>:<div className="two-col"><div className="stack">
+  <Panel title="Dados da moto" subtitle="Atualize sempre que precisar"><form className="stack" onSubmit={saveBike}><div className="field"><label htmlFor="model">Modelo</label><input id="model" className="input" required minLength={2} maxLength={100} value={bike.model} placeholder="Ex.: Honda CG 160" onChange={e=>setBike({...bike,model:e.target.value})}/></div><div className="form-grid"><div className="field"><label htmlFor="year">Ano (opcional)</label><input id="year" className="input" type="number" min="1980" max="2100" value={bike.year} onChange={e=>setBike({...bike,year:e.target.value})}/></div><div className="field"><label htmlFor="km">Quilometragem atual</label><input id="km" className="input" type="number" min="0" max="2000000" value={bike.odometerKm} onChange={e=>setBike({...bike,odometerKm:e.target.value})}/></div></div><div className="field"><label htmlFor="kml">Consumo médio (km/L, opcional)</label><input id="kml" className="input" inputMode="decimal" value={bike.kmPerLiter} placeholder="Ex.: 35" onChange={e=>setBike({...bike,kmPerLiter:e.target.value})}/></div><button className="btn" disabled={busy}><Bike size={17}/> Salvar dados</button></form></Panel>
+  <div className="highlight-strip"><Fuel size={27} color="#158856"/><div><strong>Abastecimentos</strong><p>Registre o gasto em Lançamentos → Despesa → Combustível.</p></div></div>
+ </div><div className="stack"><Panel title="Próximas manutenções" subtitle="Alertas definidos por você" action={<Wrench size={19} color="#2c986b"/>}>{reminders.length?reminders.map(r=><div key={r._id} className="activity-row"><span className="badge-icon"><Wrench size={18}/></span><div><strong>{r.label}</strong><small>{r.dueOn?`Data: ${r.dueOn.split('-').reverse().join('/')}`:''} {r.dueKm!==undefined?` · ${r.dueKm.toLocaleString('pt-BR')} km`:''}</small></div><button className="btn secondary" onClick={()=>complete(r._id)} title="Marcar como concluído"><CheckCircle2 size={16}/></button></div>):<Empty message="Nenhum lembrete cadastrado."/>}</Panel>
+ <Panel title="Novo lembrete" subtitle="Use os intervalos recomendados pelo fabricante"><form className="stack" onSubmit={addReminder}><div className="field"><label htmlFor="rem-label">Serviço</label><input id="rem-label" className="input" required minLength={2} placeholder="Ex.: Troca de óleo" value={rem.label} onChange={e=>setRem({...rem,label:e.target.value})}/></div><div className="form-grid"><div className="field"><label htmlFor="rem-date">Data (opcional)</label><input id="rem-date" className="input" type="date" value={rem.dueOn} onChange={e=>setRem({...rem,dueOn:e.target.value})}/></div><div className="field"><label htmlFor="rem-km">KM (opcional)</label><input id="rem-km" className="input" type="number" min="0" max="2000000" placeholder="Ex.: 18000" value={rem.dueKm} onChange={e=>setRem({...rem,dueKm:e.target.value})}/></div></div><button className="btn secondary"><Plus size={17}/> Adicionar lembrete</button></form></Panel>
+ </div></div>}
+ {(error||success)&&<div style={{marginTop:18}}>{error&&<Notice kind="error">{error}</Notice>}{success&&!error&&<Notice kind="success">{success}</Notice>}</div>}
+ <div className="page-footer">Os lembretes são informativos e não substituem o manual de manutenção da moto.</div>
+ </>;
+}
