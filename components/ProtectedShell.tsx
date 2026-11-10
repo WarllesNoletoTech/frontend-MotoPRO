@@ -17,6 +17,7 @@ const navigation=[
  {href:'/app/integracoes',label:'Integrações',Icon:Plug},
  {href:'/app/assinatura',label:'Assinatura',Icon:ShieldCheck},
  {href:'/app/premiacoes',label:'Benefícios',Icon:Gift},
+ {href:'/app/indicacoes',label:'Indique e ganhe',Icon:Wallet},
  {href:'/app/configuracoes',label:'Configurações',Icon:Settings}
 ];
 type User={id:string;name:string;firstName:string;lastName:string;requiresNameCompletion:boolean;email:string;phone:string|null;trialEndsAt:string;role:string};
@@ -58,7 +59,7 @@ export default function ProtectedShell({children}:{children:React.ReactNode}){
   if(user.role==='admin'&&pathname==='/app')router.replace('/app/admin');
   if(user.role!=='admin'&&pathname.startsWith('/app/admin'))router.replace('/app');
  },[checking,user,pathname,router]);
- const accountPages=pathname==='/app/assinatura'||pathname==='/app/configuracoes';
+ const accountPages=pathname==='/app/assinatura'||pathname==='/app/configuracoes'||pathname==='/app/indicacoes';
  const currentCheck=verifiedPath===pathname;
  const premiumBlocked=user?.role!=='admin'&&!accountPages&&currentCheck&&!!premiumAccess&&!premiumAccess.allowed;
  const verifyingAccess=user?.role!=='admin'&&!accountPages&&(!currentCheck||(!premiumAccess&&!accessError));

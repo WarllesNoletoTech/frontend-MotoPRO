@@ -452,3 +452,23 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 
 /* V3.14.4: Identificação visível do motor que interpretou o comando */
 .assistant-ai-indicator{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;padding:7px 11px;margin:8px 0;color:#f6cb73;background:rgba(240,179,60,.1);border:1px solid rgba(241,186,77,.3);border-radius:12px;font-weight:650;font-size:12px}
+/* Indicações: cartões legíveis no desktop e no celular. */
+.referral-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}
+.referral-code{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;padding:13px 16px;background:#faf2e4;border-radius:12px;margin-bottom:12px}
+.referral-code span{font-size:12px;color:var(--muted);font-weight:700}
+.referral-code strong{font-size:18px;letter-spacing:2px;color:#70501f}
+.referral-url{display:flex;gap:9px;align-items:center;margin-bottom:12px}
+.referral-url .input{min-width:0;flex:1}
+.referral-share{margin-bottom:12px}
+@media(max-width:1050px){.referral-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.referral-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.referral-stats .admin-stat{padding:13px}.referral-stats .admin-stat strong{font-size:20px}.referral-url{flex-direction:column;align-items:stretch}.referral-share{width:100%}}
+.admin-whatsapp{color:#efc478;text-decoration:underline;text-underline-offset:2px;font-weight:700}
+.admin-whatsapp:hover{color:#ffe0a8}
+.admin-status.warning{color:#ffd574;background:#382d15;border-color:#936b29}
+.referral-history td{color:#eadac0;border-bottom:1px solid #373128}
+.referral-history th{color:#aa9e8b;border-bottom:1px solid #534c40}
+.referral-history td small{color:#a49986}
+
+.referral-code{background:#30281d;border:1px solid #55452e}
+.referral-code span{color:#b7a68b}
+.referral-code strong{color:#f1c073}

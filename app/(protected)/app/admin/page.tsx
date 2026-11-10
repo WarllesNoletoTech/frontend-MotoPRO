@@ -5,11 +5,13 @@ import {PageHeader,Panel,Loading,Notice,Empty} from '@/components/UI';
 import {api,formatMoney} from '@/lib/api';
 import {BillingStatusBadge} from '@/components/BillingStatusBadge';
 
-type Tab='overview'|'users'|'subscriptions'|'payments'|'campaigns'|'settings'|'audit';
+type Tab='overview'|'users'|'subscriptions'|'payments'|'referrals'|'campaigns'|'settings'|'audit';
 type Overview={trialDays:number;premiumRequired:boolean;users:number;blockedUsers:number;activeSubscribers:number;expiringSubscribers:number;expiredSubscribers:number;activeCourtesy:number;receivedCents:number;approvedPayments:number;weeklyPriceCents:number;billingEnabled:boolean;monthlyCampaign:{status:string;message:string}};
 type User={id:string;name:string;email:string;phone:string|null;blocked:boolean;blockReason:string;role:string;createdAt:string;lastLoginAt:string|null;trialEndsAt:string|null;subscription?:{status:string;method:string;activeUntil?:string}|null;courtesyUntil?:string|null};
 type Subscription={id:string;userId:string;name:string;email:string;method:string;status:string;activeUntil:string|null;cancelAtPeriodEnd:boolean;priceCents:number};
 type Payment={id:string;userId:string;name:string;method:string;status:string;amountCents:number;providerPaymentId:string;createdAt:string;paidAt:string|null};
+type Referral={id:string;referrerId:string;referrerName:string;referrerPhone:string|null;referredName:string;amountCents:number;status:'available'|'paid'|'reversed';createdAt:string;paidAt:string|null;payoutNote:string};
+type ReferralPage=Paged<Referral>&{availableCents:number;paidCents:number;reversedCents:number};
 type Campaign={_id:string;id:string;title:string;description:string;reward:string;objectiveCriteria:string;status:'draft'|'published'|'closed';approvedTermsReference?:string;resultSummary?:string;createdAt:string};
 type Settings={weeklyPriceCents:number;trialDays:number;premiumRequired:boolean;newRegistrationsOpen:boolean;announcement:string;maintenanceNotice:string;premiumBenefits:string[]};
 type Audit={_id:string;action:string;createdAt:string;metadata?:Record<string,unknown>};
@@ -17,9 +19,11 @@ type Paged<T>={page:number;limit:number;total:number;items:T[]};
 const tabs:{id:Tab;label:string;Icon:typeof Users}[]=[
  {id:'overview',label:'Visão geral',Icon:Wallet},{id:'users',label:'Motoboys',Icon:Users},
  {id:'subscriptions',label:'Assinaturas',Icon:ShieldCheck},{id:'payments',label:'Financeiro',Icon:Wallet},
+ {id:'referrals',label:'Indicações',Icon:Gift},
  {id:'campaigns',label:'Campanhas',Icon:Gift},{id:'settings',label:'Configurações',Icon:Settings2},
  {id:'audit',label:'Auditoria',Icon:History}
 ];
+const whatsappHref=(phone:string|null)=>{const d=(phone||'').replace(/\D/g,'');return /^55[1-9]{2}9\d{8}$/.test(d)?`https://wa.me/${d}`:null;};
 const date=(v?:string|null)=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
 const stateLabel=(status:string)=>({active:'Ativa',pending:'Pendente',expired:'Vencida',expiring:'Vence em breve',canceled:'Cancelada',approved:'Aprovado',refunded:'Estornado',rejected:'Recusado',draft:'Rascunho',published:'Publicada',closed:'Encerrada'} as Record<string,string>)[status]||status;
 
@@ -33,6 +37,8 @@ export default function AdminPage(){
  const [payments,setPayments]=useState<(Paged<Payment>&{approvedCents:number;approvedCount:number})|null>(null);
  const [payStatus,setPayStatus]=useState('all'),[payMethod,setPayMethod]=useState('all'),[payFrom,setPayFrom]=useState(''),[payTo,setPayTo]=useState(''),[payPage,setPayPage]=useState(1);
  const [campaigns,setCampaigns]=useState<Campaign[]>([]),[audit,setAudit]=useState<Audit[]>([]);
+ const [referrals,setReferrals]=useState<ReferralPage|null>(null),[referralStatus,setReferralStatus]=useState('all'),[referralPage,setReferralPage]=useState(1);
+ const [payoutReferral,setPayoutReferral]=useState<Referral|null>(null),[payoutNote,setPayoutNote]=useState('');
  const [settings,setSettings]=useState<Settings|null>(null),[benefitText,setBenefitText]=useState(''),[priceInput,setPriceInput]=useState('9,99');
  const [actionUser,setActionUser]=useState<User|null>(null),[actionKind,setActionKind]=useState<'block'|'unblock'|'courtesy'>('block'),[reason,setReason]=useState(''),[courtesyDays,setCourtesyDays]=useState(7);
  const [campaignForm,setCampaignForm]=useState({title:'',description:'',reward:'',objectiveCriteria:'',approvedTermsReference:'',resultSummary:''});
@@ -44,12 +50,13 @@ export default function AdminPage(){
    if(tab==='users')setUsers(await api<Paged<User>>(`/admin/billing/users?page=${userPage}&limit=15&filter=${userFilter}&search=${encodeURIComponent(userSearch)}`));
    if(tab==='subscriptions')setSubscriptions(await api<Paged<Subscription>>(`/admin/billing/subscriptions?page=${subPage}&limit=15&status=${subStatus}`));
    if(tab==='payments')setPayments(await api<Paged<Payment>&{approvedCents:number;approvedCount:number}>(`/admin/billing/payments?page=${payPage}&limit=15&status=${payStatus}&method=${payMethod}${payFrom?'&from='+payFrom:''}${payTo?'&to='+payTo:''}`));
+   if(tab==='referrals')setReferrals(await api<ReferralPage>(`/admin/billing/referrals?page=${referralPage}&limit=15&status=${referralStatus}`));
    if(tab==='campaigns')setCampaigns((await api<{items:Campaign[]}>('/admin/billing/campaigns')).items);
    if(tab==='settings'){const result=await api<{settings:Settings}>('/admin/billing/settings');setSettings(result.settings);setBenefitText(result.settings.premiumBenefits.join('\n'));setPriceInput((result.settings.weeklyPriceCents/100).toFixed(2).replace('.',','));}
    if(tab==='audit')setAudit((await api<{items:Audit[]}>('/admin/billing/audit')).items);
   }catch(e){setError(e instanceof Error?e.message:'Não foi possível carregar os dados');}
   finally{setLoading(false);}
- },[tab,userPage,userFilter,userSearch,subPage,subStatus,payPage,payStatus,payMethod,payFrom,payTo]);
+ },[tab,userPage,userFilter,userSearch,subPage,subStatus,payPage,payStatus,payMethod,payFrom,payTo,referralPage,referralStatus]);
  useEffect(()=>{void load();},[load]);
  const run=async(fn:()=>Promise<unknown>,message:string)=>{
   setSaving(true);setError('');setSuccess('');
@@ -97,7 +104,7 @@ export default function AdminPage(){
    {tab==='users'&&<>
     <Panel title="Gerenciar motoboys" subtitle="Pesquisar, bloquear/desbloquear e conceder cortesias com auditoria">
       <div className="admin-toolbar"><div className="admin-search"><Search size={16}/><input aria-label="Buscar entregador" className="input" value={userSearch} onChange={e=>{setUserSearch(e.target.value);setUserPage(1);}} placeholder="Buscar por nome ou e-mail"/></div><select aria-label="Filtrar contas" className="select" value={userFilter} onChange={e=>{setUserFilter(e.target.value);setUserPage(1);}}><option value="all">Todas as contas</option><option value="active">Liberadas</option><option value="blocked">Bloqueadas</option></select></div>
-      <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Motoboy</th><th>Cadastro / último acesso</th><th>Situação</th><th>Ações</th></tr></thead><tbody>{users?.items.map(u=><tr key={u.id}><td><strong>{u.name}</strong><small>{u.email}</small><small>{u.phone||'Celular pendente'}</small></td><td>{date(u.createdAt)}<small>Último acesso: {date(u.lastLoginAt)}</small></td><td><span className={`admin-status ${u.blocked?'bad':'good'}`}>{u.blocked?'Bloqueado':'Liberado'}</span>{u.courtesyUntil&&new Date(u.courtesyUntil)>new Date()&&<small>Cortesia até {date(u.courtesyUntil)}</small>}</td><td><div className="admin-actions"><button className="btn secondary" onClick={()=>{setActionKind('courtesy');setActionUser(u);setReason('Cortesia de suporte');}}>Cortesia</button><button className={`btn ${u.blocked?'secondary':'danger'}`} onClick={()=>{setActionKind(u.blocked?'unblock':'block');setActionUser(u);setReason('');}}>{u.blocked?'Desbloquear':'Bloquear'}</button></div></td></tr>)}</tbody></table></div>
+      <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Motoboy</th><th>Cadastro / último acesso</th><th>Situação</th><th>Ações</th></tr></thead><tbody>{users?.items.map(u=><tr key={u.id}><td><strong>{u.name}</strong><small>{u.email}</small><small>{whatsappHref(u.phone)?<a className="admin-whatsapp" href={whatsappHref(u.phone)!} target="_blank" rel="noopener noreferrer" title="Conversar no WhatsApp">{u.phone} · WhatsApp ↗</a>:(u.phone||'Celular pendente')}</small></td><td>{date(u.createdAt)}<small>Último acesso: {date(u.lastLoginAt)}</small></td><td><span className={`admin-status ${u.blocked?'bad':'good'}`}>{u.blocked?'Bloqueado':'Liberado'}</span>{u.courtesyUntil&&new Date(u.courtesyUntil)>new Date()&&<small>Cortesia até {date(u.courtesyUntil)}</small>}</td><td><div className="admin-actions"><button className="btn secondary" onClick={()=>{setActionKind('courtesy');setActionUser(u);setReason('Cortesia de suporte');}}>Cortesia</button><button className={`btn ${u.blocked?'secondary':'danger'}`} onClick={()=>{setActionKind(u.blocked?'unblock':'block');setActionUser(u);setReason('');}}>{u.blocked?'Desbloquear':'Bloquear'}</button></div></td></tr>)}</tbody></table></div>
       {users?.items.length===0&&<Empty message="Nenhum motoboy encontrado"/>}
       <Pager page={userPage} total={users?.total??0} pageSize={15} onChange={setUserPage}/>
     </Panel>
@@ -116,6 +123,18 @@ export default function AdminPage(){
      {!payments?.items.length&&<Empty message="Nenhum pagamento encontrado"/>}
      <Pager page={payPage} total={payments?.total??0} pageSize={15} onChange={setPayPage}/>
      <p className="admin-small">Confira a conciliação dos pagamentos no Mercado Pago antes de fechar o financeiro.</p>
+   </Panel>}
+   {tab==='referrals'&&<Panel title="Bônus por indicação" subtitle="R$ 5 por novo usuário após o primeiro pagamento confirmado">
+    <div className="admin-stat-grid">
+     <div className="admin-stat"><Wallet size={18}/><small>Disponível para repassar</small><strong>{formatMoney(referrals?.availableCents??0)}</strong></div>
+     <div className="admin-stat"><CheckCircle2 size={18}/><small>Já repassado</small><strong>{formatMoney(referrals?.paidCents??0)}</strong></div>
+     <div className="admin-stat"><History size={18}/><small>Revertido por estorno</small><strong>{formatMoney(referrals?.reversedCents??0)}</strong></div>
+    </div>
+    <div className="admin-toolbar"><select className="select" value={referralStatus} onChange={e=>{setReferralStatus(e.target.value);setReferralPage(1);}} aria-label="Filtrar indicações"><option value="all">Todas</option><option value="available">Disponíveis para pagar</option><option value="paid">Pagas</option><option value="reversed">Estornadas</option></select></div>
+    <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Quem indicou</th><th>Novo cadastrado</th><th>Data da premiação</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead><tbody>{referrals?.items.map(r=><tr key={r.id}><td><strong>{r.referrerName}</strong><small>{whatsappHref(r.referrerPhone)?<a className="admin-whatsapp" href={whatsappHref(r.referrerPhone)!} target="_blank" rel="noopener noreferrer">{r.referrerPhone} · WhatsApp ↗</a>:(r.referrerPhone||'Sem celular')}</small></td><td>{r.referredName}</td><td>{date(r.createdAt)}</td><td>{formatMoney(r.amountCents)}</td><td><span className={`admin-status ${r.status==='paid'?'good':r.status==='reversed'?'bad':'warning'}`}>{r.status==='paid'?'Pago':r.status==='reversed'?'Estornado':'A pagar'}</span>{r.paidAt&&<small>Em {date(r.paidAt)}</small>}{r.payoutNote&&<small>{r.payoutNote}</small>}</td><td>{r.status==='available'?<button className="btn secondary" onClick={()=>{setPayoutReferral(r);setPayoutNote('');}}>Marcar como pago</button>:'—'}</td></tr>)}</tbody></table></div>
+    {!referrals?.items.length&&<Empty message="Nenhum bônus com esse status"/>}
+    <Pager page={referralPage} total={referrals?.total??0} pageSize={15} onChange={setReferralPage}/>
+    <p className="admin-small">Marcar como pago apenas registra um repasse que você já realizou manualmente, por exemplo via Pix. Essa ação NÃO envia dinheiro. Confirme os dados do beneficiário antes de pagar.</p>
    </Panel>}
    {tab==='campaigns'&&<>
     <div className="two-col admin-campaign-grid"><Panel title={editingCampaign?'Editar campanha':'Nova campanha de premiação'} subtitle="Somente benefícios não aleatórios, sujeitos a regulamento aprovado">
@@ -151,6 +170,7 @@ export default function AdminPage(){
     {!audit.length&&<Empty message="Nenhuma ação administrativa registrada"/>}
    </Panel>}
   </>}
+  {payoutReferral&&<div className="admin-modal-overlay" role="presentation"><div className="admin-modal" role="dialog" aria-modal="true" aria-label="Registrar repasse de indicação"><h2>Confirmar repasse</h2><p><strong>{payoutReferral.referrerName}</strong> · {formatMoney(payoutReferral.amountCents)}</p><p>Confirme somente depois de realizar o Pix ou outro repasse fora do MotoPRO.</p><label>Comprovante ou observação do pagamento<input className="input" maxLength={240} minLength={4} placeholder="Ex.: Pix enviado em 10/11/2026" value={payoutNote} onChange={e=>setPayoutNote(e.target.value)}/></label><div className="admin-actions"><button className="btn secondary" onClick={()=>setPayoutReferral(null)}>Cancelar</button><button className="btn" disabled={saving||payoutNote.trim().length<4} onClick={confirmPayout}><CheckCircle2 size={16}/> Confirmar pagamento</button></div></div></div>}
   {actionUser&&<div className="admin-modal-overlay" role="presentation"><div className="admin-modal" role="dialog" aria-modal="true" aria-label="Confirmar ação"><h2>{actionKind==='courtesy'?'Conceder cortesia':actionKind==='block'?'Bloquear conta':'Desbloquear conta'}</h2><p><b>{actionUser.name}</b> · {actionUser.email}</p>{actionKind==='courtesy'&&<label>Dias (1 a 30)<input className="input" type="number" min="1" max="30" value={courtesyDays} onChange={e=>setCourtesyDays(Number(e.target.value))}/></label>}<label>Motivo obrigatório<textarea className="textarea" value={reason} onChange={e=>setReason(e.target.value)} maxLength={240} minLength={5}/></label><div className="admin-actions"><button className="btn secondary" onClick={()=>setActionUser(null)}>Cancelar</button><button className="btn" disabled={saving||reason.trim().length<5} onClick={confirmUser}><CheckCircle2 size={16}/> Confirmar</button></div></div></div>}
  </>;
 }
