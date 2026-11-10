@@ -5,10 +5,12 @@ import {Mic, Square, Send, Sparkles, CheckCircle2, XCircle, Wallet, Volume2, Clo
 import {api, formatMoney, todayLocal, categoryLabel} from '@/lib/api';
 import {PageHeader, Panel, Notice} from '@/components/UI';
 
-type Parsed =
+type InterpretationMeta = {engine?: 'ai' | 'basic'; advisory?: string};
+type Parsed = InterpretationMeta & (
   | {kind: 'entry'; type: 'income' | 'expense'; category: string; amountCents: number; description: string}
   | {kind: 'summary'; period: 'week' | 'today'; summary: {incomeCents: number; expenseCents: number; profitCents: number}; periodRange?: {from: string; to: string}}
-  | {kind: 'unknown'; message: string};
+  | {kind: 'unknown'; message: string}
+);
 
 const MAX_RECORDING_MS = 10_000;
 
@@ -247,7 +249,7 @@ export default function AssistantPage() {
     <PageHeader
       eyebrow="ASSISTENTE INTELIGENTE"
       title="Só falar. O MotoPRO organiza."
-      description="Registre ganhos e despesas por voz ou texto. Gravações de até 10 segundos, sempre com confirmação antes de salvar."
+      description="Fale ou digite naturalmente. A IA interpreta seus comandos; você sempre confere antes de salvar."
     />
     <div className="two-col assistant-layout">
       <div className="stack">
@@ -314,6 +316,10 @@ export default function AssistantPage() {
           <div className="assistant-inline-result" aria-live="polite">
             <div className="assistant-result-title"><strong>Resultado do assistente</strong><small>Confira antes de salvar</small></div>
           {error && <Notice kind="error">{error}</Notice>}
+          {pending && <div className="assistant-ai-indicator">
+            <Sparkles size={16}/> {pending.engine === 'ai' ? 'Interpretado pela IA' : 'Interpretação básica'}
+          </div>}
+          {pending?.advisory && <Notice kind="error">{pending.advisory}</Notice>}
           {success && <Notice kind="success">{success}</Notice>}
           {pending?.kind === 'entry' && <div className="confirm-card">
             <span className="pill">Lançamento identificado</span>
@@ -350,7 +356,7 @@ export default function AssistantPage() {
       </div>
 
       <div className="stack">
-        <Panel title="Ou digite seu comando" subtitle="Funciona sem chave de IA">
+        <Panel title="Ou digite seu comando" subtitle="A IA também interpreta comandos digitados">
           <form onSubmit={submitText} className="stack">
             <textarea
               className="textarea"
@@ -383,7 +389,7 @@ export default function AssistantPage() {
     </div>
     <p className="page-footer">
       Áudio precisa de HTTPS/localhost, permissão de microfone e OPENAI_API_KEY no servidor.
-      Comandos digitados não exigem serviço externo de IA.
+      Comandos por voz e texto usam IA quando configurada; se a IA ficar indisponível, permanece o modo básico.
     </p>
   </>;
 }

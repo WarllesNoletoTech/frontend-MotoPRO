@@ -449,3 +449,6 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .assistant-voice-edit .textarea{width:100%;min-height:72px;max-width:100%;resize:vertical;color:#f9f0dd;background:#191712;border:1px solid #8d6c38}
 .assistant-voice-edit .btn{width:100%;justify-content:center}
 @media(max-width:600px){.assistant-inline-result .form-grid{grid-template-columns:1fr}.assistant-result-title{align-items:start}.assistant-inline-result{padding-top:14px}}
+
+/* V3.14.4: Identificação visível do motor que interpretou o comando */
+.assistant-ai-indicator{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;padding:7px 11px;margin:8px 0;color:#f6cb73;background:rgba(240,179,60,.1);border:1px solid rgba(241,186,77,.3);border-radius:12px;font-weight:650;font-size:12px}
