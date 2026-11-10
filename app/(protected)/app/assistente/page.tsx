@@ -17,6 +17,9 @@ const MAX_RECORDING_MS = 10_000;
 export default function AssistantPage() {
   const [text, setText] = useState('');
   const [transcript, setTranscript] = useState('');
+  const [firstTranscript, setFirstTranscript] = useState('');
+  const [alternateTranscript, setAlternateTranscript] = useState('');
+  const [recordedAudioUrl, setRecordedAudioUrl] = useState('');
   const [pending, setPending] = useState<Parsed | null>(null);
   const [recording, setRecording] = useState(false);
   const [starting, setStarting] = useState(false);
@@ -32,6 +35,8 @@ export default function AssistantPage() {
   const recorder = useRef<MediaRecorder | null>(null);
   const stream = useRef<MediaStream | null>(null);
   const chunks = useRef<Blob[]>([]);
+  const recordedAudio = useRef<Blob | null>(null);
+  const recordedUrlRef = useRef<string | null>(null);
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ticker = useRef<ReturnType<typeof setInterval> | null>(null);
   const startedAt = useRef(0);
@@ -63,6 +68,7 @@ export default function AssistantPage() {
       }
       recorder.current = null;
       releaseMicrophone();
+      if (recordedUrlRef.current) URL.revokeObjectURL(recordedUrlRef.current);
     };
   }, []);
 
@@ -116,8 +122,14 @@ export default function AssistantPage() {
     setVoiceError('');
     setVoiceInfo('');
     setTranscript('');
+    setFirstTranscript('');
+    setAlternateTranscript('');
     setPending(null);
     setSecondsRemaining(10);
+    recordedAudio.current = null;
+    if (recordedUrlRef.current) URL.revokeObjectURL(recordedUrlRef.current);
+    recordedUrlRef.current = null;
+    setRecordedAudioUrl('');
     if (typeof MediaRecorder === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
       setVoiceError('Este navegador não disponibiliza gravação de áudio. Use o campo de texto.');
       return;
@@ -160,6 +172,11 @@ export default function AssistantPage() {
         const ext = active.mimeType.includes('mp4') ? 'mp4' : 'webm';
         const blob = new Blob(chunks.current, {type: active.mimeType || 'audio/webm'});
         chunks.current = [];
+        recordedAudio.current = blob;
+        if (recordedUrlRef.current) URL.revokeObjectURL(recordedUrlRef.current);
+        const clipUrl = URL.createObjectURL(blob);
+        recordedUrlRef.current = clipUrl;
+        setRecordedAudioUrl(clipUrl);
         if (blob.size < 100) {
           setVoiceError('O áudio ficou vazio. Grave novamente.');
           setVoiceInfo('');
@@ -177,6 +194,8 @@ export default function AssistantPage() {
           const spoken = response.text?.trim();
           if (!spoken) throw new Error('Não foi possível identificar sua fala. Tente novamente.');
           setTranscript(spoken);
+          setFirstTranscript(spoken);
+          setAlternateTranscript('');
           setText(spoken); // Permite corrigir a transcrição manualmente, se necessário.
           setVoiceInfo('Transcrição pronta. Confira abaixo antes de salvar.');
           await interpret(spoken, 'voice');
@@ -216,6 +235,45 @@ export default function AssistantPage() {
     } finally {
       if (mounted.current) setStarting(false);
     }
+  };
+
+  const alternativeTranscription = async () => {
+    const audio = recordedAudio.current;
+    if (!audio || recording || transcribing || processing) return;
+    setTranscribing(true);
+    setVoiceError('');
+    setVoiceInfo('Ouvindo novamente com outro modelo…');
+    setPending(null);
+    interpretSequence.current++;
+    try {
+      const fd = new FormData();
+      const ext = audio.type.includes('mp4') ? 'mp4' : 'webm';
+      fd.append('audio', audio, `comando.${ext}`);
+      fd.append('durationMs', String(elapsedAtStop.current));
+      fd.append('mode', 'alternative');
+      const result = await api<{text:string}>('/assistant/transcribe', {method:'POST',body:fd});
+      const updated = result.text?.trim();
+      if(!updated) throw new Error('Não foi possível reconhecer outra versão. Corrija o texto manualmente.');
+      if (!mounted.current) return;
+      setAlternateTranscript(updated);
+      setTranscript(updated);
+      setText(updated);
+      setVoiceInfo('Segunda leitura pronta. Compare com a primeira e escolha a correta.');
+      await interpret(updated, 'voice');
+    } catch(e) {
+      if(mounted.current) setVoiceError((e as Error).message);
+    } finally {
+      if(mounted.current) setTranscribing(false);
+    }
+  };
+
+  const chooseTranscript = (value:string) => {
+    setTranscript(value);
+    setText(value);
+    setPending(null);
+    setVoiceError('');
+    setVoiceInfo('Versão selecionada. Confira o texto e interprete novamente.');
+    interpretSequence.current++;
   };
 
   const confirm = async () => {
@@ -285,6 +343,19 @@ export default function AssistantPage() {
           ><span style={{width: `${Math.max(0, (10 - secondsRemaining) * 10)}%`}}/></div>}
           {voiceInfo && !recording && <p className="assistant-voice-info" role="status">{voiceInfo}</p>}
           {voiceError && <div className="assistant-voice-error" role="alert">{voiceError}</div>}
+          {recordedAudioUrl && !recording && <div className="assistant-voice-edit">
+            <label>Confira sua gravação original antes de salvar</label>
+            <audio controls preload="metadata" src={recordedAudioUrl} style={{width:'100%',maxWidth:420}} aria-label="Ouvir a gravação feita pelo microfone"/>
+            <button type="button" className="btn secondary" disabled={transcribing || processing || recording} onClick={alternativeTranscription}>
+              <Volume2 size={16}/> Tentar outra transcrição
+            </button>
+          </div>}
+          {alternateTranscript && firstTranscript && alternateTranscript!==firstTranscript && <div className="assistant-voice-edit">
+            <label>As leituras foram diferentes. Ouça o áudio e selecione uma opção:</label>
+            <button type="button" className="btn secondary" onClick={()=>chooseTranscript(firstTranscript)}>1ª leitura: {firstTranscript}</button>
+            <button type="button" className="btn secondary" onClick={()=>chooseTranscript(alternateTranscript)}>2ª leitura: {alternateTranscript}</button>
+            <small>Se nenhuma estiver correta, ajuste o texto manualmente. Nunca confirme um valor que não foi dito.</small>
+          </div>}
           {transcript && <div className="assistant-transcript" aria-live="polite">
             <span>O QUE FOI ENTENDIDO</span>
             <strong>“{transcript}”</strong>
