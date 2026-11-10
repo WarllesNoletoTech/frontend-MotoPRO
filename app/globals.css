@@ -407,3 +407,15 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
   .showcase-money { font-size:28px; }
   .showcase-trend { padding:4px 6px; }
 }
+
+
+/* Minha moto — abastecimentos, V3.14.2 */
+.fuel-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:15px}
+.fuel-stats>div{border:1px solid #51432c;background:#292219;border-radius:13px;padding:12px;min-width:0}
+.fuel-stats small{display:block;color:#ad9a7b;font-size:11px;margin-bottom:4px}
+.fuel-stats strong{font:700 17px Outfit,system-ui,sans-serif;color:#f6cd81;overflow-wrap:anywhere}
+.fuel-record-info{flex:1;min-width:0}
+.fuel-record-info strong,.fuel-record-info small{overflow-wrap:anywhere}
+.fuel-amount{color:#f7bd6d;white-space:nowrap;font-size:12px}
+.fuel-remove{color:#ef9989;flex:none}
+@media(max-width:600px){.fuel-stats{grid-template-columns:1fr 1fr}.fuel-stats>div:last-child{grid-column:span 2}.fuel-history-row{flex-wrap:wrap;gap:9px}.fuel-amount{margin-left:auto}}
