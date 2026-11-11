@@ -529,3 +529,27 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 }
 .phase3-customer-search{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
 .phase3-customer-search .input{flex:1;min-width:145px}
+
+/* MotoPRO 1.6 — Fase 4: rotina financeira, alertas e produtividade */
+.phase4-panels{align-items:start;margin-bottom:18px}
+.phase4-list-card{display:flex;flex-direction:column;gap:11px;padding:16px;border:1px solid var(--line,rgba(128,128,128,.16));border-radius:14px;background:var(--card,#fff)}
+.phase4-list-card small{color:var(--text-muted,#888)}
+.phase4-actions{display:flex;gap:8px;flex-wrap:wrap}
+.phase4-actions .btn{font-size:12px;padding:8px 10px}
+.phase4-note{margin:18px 0 34px;line-height:1.65}
+.phase4-alert-item{display:flex;align-items:center;gap:14px;padding:16px;border:1px solid var(--line,rgba(128,128,128,.16));border-radius:14px;text-decoration:none;color:inherit;min-width:0;transition:border-color .2s}
+.phase4-alert-item:hover{border-color:#d1a456}
+.phase4-alert-icon{flex:0 0 42px;width:42px;height:42px;border-radius:11px;background:rgba(215,151,40,.11);color:#b5812d;display:flex;align-items:center;justify-content:center}
+.phase4-alert-icon.warning{background:rgba(206,79,54,.10);color:#cc5139}
+.phase4-alert-body{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}
+.phase4-alert-body small{font-size:12px;color:var(--text-muted,#888);line-height:1.45}
+.phase4-stats{margin-bottom:20px}
+.phase4-stats .admin-stat strong{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.phase4-month-picker{display:flex;align-items:center;gap:8px;font-size:13px}
+.phase4-chart-scroll{overflow-x:auto;padding-bottom:12px}
+.phase4-chart{min-width:620px}
+.phase4-chart .bar-item{min-width:15px}
+.phase4-summary-list{display:flex;flex-direction:column;gap:4px}
+.phase4-summary-row{padding:12px 0;border-bottom:1px solid rgba(120,120,120,.15);gap:10px}
+@media (max-width:780px){.phase4-panels{grid-template-columns:1fr}.phase4-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.phase4-actions .btn{flex:1;justify-content:center}.phase4-month-picker{width:100%;justify-content:space-between}}
+@media (max-width:460px){.phase4-stats{grid-template-columns:1fr}.phase4-alert-item{padding:12px;gap:9px}.phase4-actions{gap:6px}}

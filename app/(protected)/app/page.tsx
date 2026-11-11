@@ -1,7 +1,7 @@
 'use client';
 import {useEffect,useState} from 'react';
 import Link from 'next/link';
-import {ArrowUpRight,ArrowDownRight,Wallet,Plus,Mic,TrendingUp,Fuel,ReceiptText,Target,ArrowRight,RefreshCw,UsersRound,ChartNoAxesCombined,Trophy} from 'lucide-react';
+import {ArrowUpRight,ArrowDownRight,Wallet,Plus,Mic,TrendingUp,Fuel,ReceiptText,Target,ArrowRight,RefreshCw,UsersRound,ChartNoAxesCombined,Trophy,Bell,Repeat2,ChartColumnIncreasing} from 'lucide-react';
 import {api,formatMoney,dateLabel,categoryLabel,type Dashboard,type Entry} from '@/lib/api';
 import {PageHeader,Panel,Loading,Notice,Empty} from '@/components/UI';
 export default function DashboardPage(){
@@ -39,7 +39,7 @@ export default function DashboardPage(){
     <Panel title="Minha meta" subtitle="Lucro estimado da semana" action={<Target size={19} color="#b88738"/>}>
      {goal?<><div className="row-between"><strong style={{font:'700 27px Outfit'}}>{progress}%</strong><span className="text-muted" style={{fontSize:12}}>Meta de {formatMoney(goal)}</span></div><div className="progress-bar"><div className="progress-fill" style={{width:`${progress}%`}}/></div><div className="progress-info"><span>{formatMoney(Math.max(0,data.profitCents))}</span><span className="text-muted">Faltam {formatMoney(Math.max(0,goal-data.profitCents))}</span></div></>:<><p className="text-muted" style={{fontSize:13,marginBottom:15}}>Defina quanto deseja lucrar por semana e acompanhe sua evolução.</p><Link href="/app/metas" className="btn secondary">Definir meta</Link></>}
     </Panel>
-    <Panel title="Acesso rápido"><div className="stack-sm"><Link href="/app/lancamentos" className="btn wide secondary"><Plus size={17}/> Registrar lançamento</Link><Link href="/app/moto" className="btn wide outline"><Fuel size={17}/> Minha moto</Link><Link href="/app/relatorios" className="btn wide outline"><ReceiptText size={17}/> Fechamento semanal</Link><Link href="/app/particulares" className="btn wide outline"><UsersRound size={17}/> Entregas particulares</Link><Link href="/app/plataformas" className="btn wide outline"><ChartNoAxesCombined size={17}/> Ganhos por plataforma</Link><Link href="/app/premiacoes" className="btn wide outline"><Trophy size={17}/> Minhas conquistas</Link></div></Panel>
+    <Panel title="Acesso rápido"><div className="stack-sm"><Link href="/app/lancamentos" className="btn wide secondary"><Plus size={17}/> Registrar lançamento</Link><Link href="/app/moto" className="btn wide outline"><Fuel size={17}/> Minha moto</Link><Link href="/app/relatorios" className="btn wide outline"><ReceiptText size={17}/> Fechamento semanal</Link><Link href="/app/particulares" className="btn wide outline"><UsersRound size={17}/> Entregas particulares</Link><Link href="/app/plataformas" className="btn wide outline"><ChartNoAxesCombined size={17}/> Ganhos por plataforma</Link><Link href="/app/premiacoes" className="btn wide outline"><Trophy size={17}/> Minhas conquistas</Link><Link href="/app/recorrentes" className="btn wide outline"><Repeat2 size={17}/> Despesas recorrentes</Link><Link href="/app/avisos" className="btn wide outline"><Bell size={17}/> Avisos e pendências</Link><Link href="/app/produtividade" className="btn wide outline"><ChartColumnIncreasing size={17}/> Produtividade</Link></div></Panel>
    </div>
   </div>
   <div style={{height:18}}/>
@@ -47,6 +47,6 @@ export default function DashboardPage(){
    {!entries.length?<Empty message="Nenhum lançamento ainda. Registre sua primeira entrega!"/>:entries.map(entry=><div key={entry._id} className="activity-row"><span className="badge-icon">{entry.type==='income'?<TrendingUp size={19}/>:<ReceiptText size={19}/>}</span><div><strong>{entry.description||categoryLabel(entry.category)}</strong><small>{categoryLabel(entry.category)} · {dateLabel(entry.occurredOn)}</small></div><span className={`amount ${entry.type==='income'?'text-income':'text-expense'}`}>{entry.type==='income'?'+':'−'} {formatMoney(entry.amountCents)}</span></div>)}
   </Panel>
  </>}
- <div className="page-footer">MotoPRO 1.5.0 · Dados financeiros estimados com base nos lançamentos registrados.</div>
+ <div className="page-footer">MotoPRO 1.6.0 · Dados financeiros estimados com base nos lançamentos registrados.</div>
  </>;
 }

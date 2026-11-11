@@ -1,8 +1,8 @@
 'use client';
-import {useEffect,useState} from 'react';
+import {useEffect,useState,useRef} from 'react';
 import Link from 'next/link';
 import {usePathname,useRouter} from 'next/navigation';
-import {LayoutDashboard,ReceiptText,Mic2,Bike,Target,Plug,ShieldCheck,LogOut,Settings,Gift,ChevronRight,LoaderCircle,Menu,X,Wallet,CalendarClock,LockKeyhole,QrCode,FileBarChart2,ScanLine,GitCompareArrows,UsersRound,ChartNoAxesCombined} from 'lucide-react';
+import {LayoutDashboard,ReceiptText,Mic2,Bike,Target,Plug,ShieldCheck,LogOut,Settings,Gift,ChevronRight,LoaderCircle,Menu,X,Wallet,CalendarClock,LockKeyhole,QrCode,FileBarChart2,ScanLine,GitCompareArrows,UsersRound,ChartNoAxesCombined,Bell,Repeat2,ChartColumnIncreasing} from 'lucide-react';
 import {api} from '@/lib/api';
 import {readBillingStatus} from '@/lib/billingContract';
 import CompletePhone from '@/components/CompletePhone';
@@ -19,6 +19,9 @@ const navigation=[
  {href:'/app/conciliacao',label:'Conciliação',Icon:GitCompareArrows},
  {href:'/app/particulares',label:'Entregas particulares',Icon:UsersRound},
  {href:'/app/plataformas',label:'Ganhos por plataforma',Icon:ChartNoAxesCombined},
+ {href:'/app/recorrentes',label:'Despesas recorrentes',Icon:Repeat2},
+ {href:'/app/avisos',label:'Avisos e pendências',Icon:Bell},
+ {href:'/app/produtividade',label:'Produtividade',Icon:ChartColumnIncreasing},
  {href:'/app/integracoes',label:'Integrações',Icon:Plug},
  {href:'/app/assinatura',label:'Assinatura',Icon:ShieldCheck},
  {href:'/app/premiacoes',label:'Benefícios',Icon:Gift},
@@ -30,6 +33,7 @@ export default function ProtectedShell({children}:{children:React.ReactNode}){
  const [user,setUser]=useState<User|null>(null);
  const [checking,setChecking]=useState(true);
  const [menuOpen,setMenuOpen]=useState(false);
+ const lastRecurringSync=useRef('');
  const [notices,setNotices]=useState<{announcement:string;maintenanceNotice:string}|null>(null);
  const [premiumAlert,setPremiumAlert]=useState<{status:string;title:string;message:string;activeUntil:string|null}|null>(null);
  const [premiumAccess,setPremiumAccess]=useState<{premiumRequired:boolean;allowed:boolean;priceCents:number}|null>(null);
@@ -40,6 +44,19 @@ export default function ProtectedShell({children}:{children:React.ReactNode}){
  const pathname=usePathname();const router=useRouter();
  useEffect(()=>{let active=true;api<{user:User}>('/auth/me').then(r=>{if(active)setUser(r.user);}).catch(()=>{if(active)router.replace('/entrar');}).finally(()=>{if(active)setChecking(false);});return()=>{active=false;};},[router]);
  useEffect(()=>{setMenuOpen(false);},[pathname]);
+ // Sincronização idempotente: processa despesas do mês corrente quando o assinante acessa o app.
+ useEffect(()=>{
+  if(!user||user.role!=='driver'||!premiumAccess?.allowed)return;
+  const run=()=>{
+   if(document.visibilityState==='hidden')return;
+   const day=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Belem',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+   if(lastRecurringSync.current===day)return;
+   lastRecurringSync.current=day;
+   void api('/recorrentes/sync',{method:'POST'}).catch(()=>{lastRecurringSync.current='';});
+  };
+  run();document.addEventListener('visibilitychange',run);
+  return()=>document.removeEventListener('visibilitychange',run);
+ },[user?.id,user?.role,premiumAccess?.allowed]);
  useEffect(()=>{const reload=()=>{api<{user:User}>('/auth/me').then(r=>setUser(r.user)).catch(()=>{});};window.addEventListener('motopro:profile-updated',reload);return()=>window.removeEventListener('motopro:profile-updated',reload);},[]);
  useEffect(()=>{api<{announcement:string;maintenanceNotice:string}>('/public/settings').then(setNotices).catch(()=>{});},[]);
  useEffect(()=>{

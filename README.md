@@ -74,3 +74,8 @@ o motoboy precisa confirmar o recebimento, operação idempotente protegida por 
 Para gerar um PDF, use o botão **PDF** das telas, que abre a impressão do navegador;
 escolha **Salvar como PDF**. Para CSV, use o botão de exportação. Publique o backend
 v1.5.0 **antes** do frontend. Consulte `LEIA_PRIMEIRO_FASE3.txt` na raiz do pacote.
+
+
+## Fase 4 — MotoPRO 1.6.0
+
+Consulte `LEIA_PRIMEIRO_FASE4.txt`, `ALTERACOES_FASE4.md` e `CHECKLIST_HOMOLOGACAO_FASE4.md` na raiz do ZIP completo. A versão inclui despesas recorrentes, avisos internos, produtividade e métricas de adoção; não inclui push nem cobrança de despesas reais.
