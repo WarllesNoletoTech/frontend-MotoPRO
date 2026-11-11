@@ -45,3 +45,15 @@ A variável **não deve conter** a parte `/api`, query string, senha ou espaços
 Não adicione `NEXT_PUBLIC_API_URL`: o acesso deve permanecer no mesmo domínio
 para preservar os cookies de sessão. O aviso de Node.js 24 no build é
 informativo e não causou o erro acima.
+
+
+## Fechamento semanal automático — Fase 1
+
+A página **Relatórios** permite ao motoboy autorizar o envio semanal por e-mail,
+com confirmação do endereço pelo link recebido. Ele pode cancelar a qualquer
+momento, mesmo sem assinatura ativa. O envio **não é habilitado por padrão**.
+
+A API exige `RESEND_API_KEY` e `REPORTS_FROM_EMAIL` reais no Heroku e o processo
+agendado `npm run reports:weekly`. A Vercel não executa esse agendamento;
+a inclusão do código não configura automaticamente a entrega de e-mails.
+O painel Admin → Sistema mostra quantidade de e-mails habilitados, enviados e falhos.
