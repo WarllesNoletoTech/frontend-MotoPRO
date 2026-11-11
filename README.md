@@ -61,3 +61,16 @@ O painel Admin → Sistema mostra quantidade de e-mails habilitados, enviados e 
 ## Fase 2 — MotoPRO v1.4.0
 
 Telas novas: `/app/comprovantes` (fotografia, análise e confirmação) e `/app/conciliacao` (conferência de ganhos importados), além de planos de manutenção em `/app/moto`, dupla leitura opcional em `/app/assistente` e indicadores de IA em Admin > Sistema. Necessário publicar o backend da Fase 2 antes do frontend.
+
+## Fase 3 — MotoPRO v1.5.0
+
+Novas telas de entregas particulares (`/app/particulares`) e comparativo por plataforma
+(`/app/plataformas`), conquistas pessoais em `/app/premiacoes` e indicadores agregados
+na aba **Indicadores** do administrador. As entregas pendentes não entram nos ganhos:
+o motoboy precisa confirmar o recebimento, operação idempotente protegida por índice
+único do backend. Os ganhos do iFood e de outros aplicativos precisam ser identificados
+**manualmente** no formulário de lançamentos; só Rappidex é importado quando integrado.
+
+Para gerar um PDF, use o botão **PDF** das telas, que abre a impressão do navegador;
+escolha **Salvar como PDF**. Para CSV, use o botão de exportação. Publique o backend
+v1.5.0 **antes** do frontend. Consulte `LEIA_PRIMEIRO_FASE3.txt` na raiz do pacote.

@@ -1,11 +1,11 @@
 'use client';
 import {useEffect,useState,useCallback} from 'react';
-import {Users,Wallet,ShieldCheck,Gift,Settings2,History,RefreshCcw,Search,Ban,CheckCircle2,Plus,CalendarClock,Save,Activity,Eye,ClipboardList} from 'lucide-react';
+import {Users,Wallet,ShieldCheck,Gift,Settings2,History,RefreshCcw,Search,Ban,CheckCircle2,Plus,CalendarClock,Save,Activity,Eye,ClipboardList,BarChart3,FileDown,Printer} from 'lucide-react';
 import {PageHeader,Panel,Loading,Notice,Empty} from '@/components/UI';
 import {api,formatMoney} from '@/lib/api';
 import {BillingStatusBadge} from '@/components/BillingStatusBadge';
 
-type Tab='overview'|'users'|'subscriptions'|'payments'|'referrals'|'campaigns'|'settings'|'audit'|'system';
+type Tab='overview'|'users'|'subscriptions'|'payments'|'referrals'|'campaigns'|'settings'|'audit'|'system'|'analytics';
 type Overview={active24h:number;new7d:number;entries7d:number;trialDays:number;premiumRequired:boolean;users:number;blockedUsers:number;activeSubscribers:number;expiringSubscribers:number;expiredSubscribers:number;activeCourtesy:number;receivedCents:number;approvedPayments:number;weeklyPriceCents:number;billingEnabled:boolean;monthlyCampaign:{status:string;message:string}};
 type User={id:string;name:string;email:string;phone:string|null;blocked:boolean;blockReason:string;role:string;createdAt:string;lastLoginAt:string|null;lastActivityAt:string|null;trialEndsAt:string|null;subscription?:{status:string;method:string;activeUntil?:string}|null;courtesyUntil?:string|null};
 type Subscription={id:string;userId:string;name:string;email:string;method:string;status:string;activeUntil:string|null;cancelAtPeriodEnd:boolean;priceCents:number};
@@ -24,13 +24,15 @@ type Insights={user:{id:string;name:string;email:string;phone:string|null;create
  goal:{weeklyTargetCents:number;monthlyTargetCents:number}|null;
  integration:{provider:string;remoteName:string;lastSyncAt:string|null}|null;
  subscription:{status:string;method:string;activeUntil:string|null}|null;courtesy:{activeUntil:string;lastGrantedAt:string;reason:string}|null};
+type AdminAnalytics={periodDays:number;generatedAt:string;users:number;activeDrivers:number;newDrivers:number;previousCohort:number;retainedDrivers:number;retentionPercent:number|null;payingSubscribers:number;activeCourtesy:number;cancelAtPeriodEnd:number;activeSubscriptionRatio:number;approvedPayments:number;approvedRevenueCents:number;monthlyProjectionCents:number;privateDeliveries:number;privateCustomers:number;earnings:{type:string;source:string;provider:string;platform:string;count:number;amountCents:number}[];ai:{calls:number;estimatedUsd:number|null};notes:string[]};
 type SystemInfo={automation?:{last30d:number;confirmedReceipts:number;activeMaintenancePlans:number;last7d:{feature:string;outcome:string;count:number;inputTokens:number;outputTokens:number;estimatedUsd:number|null}[]};weeklyEmailConfigured:boolean;weeklyEmailSubscribers:number;weeklyEmailSent7d:number;weeklyEmailFailed7d:number;checkedAt:string;apiOnline:boolean;databaseConnected:boolean;uptimeSeconds:number;registeredTotal:number;registered7d:number;active24h:number;active7d:number;entries7d:number;entriesTotal:number;approvedPayments7d:number;approvedCents7d:number;note:string;recentUsers:{id:string;name:string;createdAt:string;lastActivityAt:string|null}[]};
 const tabs:{id:Tab;label:string;Icon:typeof Users}[]=[
  {id:'overview',label:'Visão geral',Icon:Wallet},{id:'users',label:'Motoboys',Icon:Users},
  {id:'subscriptions',label:'Assinaturas',Icon:ShieldCheck},{id:'payments',label:'Financeiro',Icon:Wallet},
  {id:'referrals',label:'Indicações',Icon:Gift},
  {id:'campaigns',label:'Campanhas',Icon:Gift},{id:'settings',label:'Configurações',Icon:Settings2},
- {id:'audit',label:'Auditoria',Icon:History},{id:'system',label:'Sistema',Icon:Activity}
+ {id:'audit',label:'Auditoria',Icon:History},{id:'system',label:'Sistema',Icon:Activity},
+ {id:'analytics',label:'Indicadores',Icon:BarChart3}
 ];
 const whatsappHref=(phone:string|null)=>{const d=(phone||'').replace(/\D/g,'');return /^55[1-9]{2}9\d{8}$/.test(d)?`https://wa.me/${d}`:null;};
 const date=(v?:string|null)=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
@@ -46,6 +48,7 @@ export default function AdminPage(){
  const [courtesies,setCourtesies]=useState<Paged<Courtesy>|null>(null),[courtesyStatus,setCourtesyStatus]=useState('all'),[courtesyPage,setCourtesyPage]=useState(1);
  const [insights,setInsights]=useState<Insights|null>(null),[insightsBusy,setInsightsBusy]=useState(false);
  const [system,setSystem]=useState<SystemInfo|null>(null);
+ const [analytics,setAnalytics]=useState<AdminAnalytics|null>(null),[analyticsDays,setAnalyticsDays]=useState(30);
  const [payments,setPayments]=useState<(Paged<Payment>&{approvedCents:number;approvedCount:number})|null>(null);
  const [payStatus,setPayStatus]=useState('all'),[payMethod,setPayMethod]=useState('all'),[payFrom,setPayFrom]=useState(''),[payTo,setPayTo]=useState(''),[payPage,setPayPage]=useState(1);
  const [campaigns,setCampaigns]=useState<Campaign[]>([]),[audit,setAudit]=useState<Audit[]>([]);
@@ -73,9 +76,10 @@ export default function AdminPage(){
    if(tab==='settings'){const result=await api<{settings:Settings}>('/admin/billing/settings');setSettings(result.settings);setBenefitText(result.settings.premiumBenefits.join('\n'));setPriceInput((result.settings.weeklyPriceCents/100).toFixed(2).replace('.',','));}
    if(tab==='audit')setAudit((await api<{items:Audit[]}>('/admin/billing/audit')).items);
     if(tab==='system')setSystem(await api<SystemInfo>('/admin/billing/system'));
+    if(tab==='analytics')setAnalytics(await api<AdminAnalytics>(`/admin/billing/analytics?days=${analyticsDays}`));
   }catch(e){setError(e instanceof Error?e.message:'Não foi possível carregar os dados');}
   finally{setLoading(false);}
- },[tab,userPage,userFilter,userSearch,subPage,subStatus,payPage,payStatus,payMethod,payFrom,payTo,referralPage,referralStatus,courtesyPage,courtesyStatus]);
+ },[tab,userPage,userFilter,userSearch,subPage,subStatus,payPage,payStatus,payMethod,payFrom,payTo,referralPage,referralStatus,courtesyPage,courtesyStatus,analyticsDays]);
  useEffect(()=>{void load();},[load]);
  const run=async(fn:()=>Promise<unknown>,message:string)=>{
   setSaving(true);setError('');setSuccess('');
@@ -250,6 +254,41 @@ export default function AdminPage(){
       <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Nome</th><th>Cadastro</th><th>Última atividade</th></tr></thead><tbody>{system.recentUsers.map(u=><tr key={u.id}><td>{u.name}</td><td>{date(u.createdAt)}</td><td>{date(u.lastActivityAt)}</td></tr>)}</tbody></table></div>
      </Panel>
     </div>
+   </>}
+
+   {tab==='analytics'&&analytics&&<>
+    <Panel title="Análise de negócio" subtitle="Indicadores agregados de assinaturas, atividade e adoção. Não substitui a contabilidade.">
+     <div className="phase3-header-actions" style={{marginBottom:14}}>
+      <label className="phase3-inline-filter">Período <select className="select" value={analyticsDays} onChange={e=>setAnalyticsDays(Number(e.target.value))}><option value={7}>7 dias</option><option value={30}>30 dias</option><option value={90}>90 dias</option></select></label>
+      <button className="btn secondary" onClick={()=>{
+       const csv=(v:string)=>`"${(/^[=+@-]/.test(v)?"'"+v:v).replace(/"/g,'""')}"`;
+       const rows=[['Indicador','Valor'],['Total de motoboys',String(analytics.users)],['Ativos no período',String(analytics.activeDrivers)],['Novos cadastros',String(analytics.newDrivers)],['Assinaturas pagas ativas',String(analytics.payingSubscribers)],['Cortesias ativas',String(analytics.activeCourtesy)],['Receita aprovada no período (R$)',(analytics.approvedRevenueCents/100).toFixed(2).replace('.',',')],['Projeção mensal teórica (R$)',(analytics.monthlyProjectionCents/100).toFixed(2).replace('.',',')],['Entregas particulares cadastradas',String(analytics.privateDeliveries)],['Uso de IA',String(analytics.ai.calls)],['Retenção da coorte (%)',analytics.retentionPercent===null?'Sem coorte':String(analytics.retentionPercent)]].map(line=>line.map(csv).join(';'));
+       const blob=new Blob(['\ufeff'+rows.join('\r\n')],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=`motopro-admin-indicadores-${analyticsDays}d.csv`;link.click();URL.revokeObjectURL(url);
+      }}><FileDown size={16}/> Exportar CSV</button>
+      <button className="btn secondary" onClick={()=>window.print()}><Printer size={16}/> Salvar PDF</button>
+     </div>
+     <div className="admin-stat-grid">{[
+      {label:'Motoboys cadastrados',value:String(analytics.users),Icon:Users},
+      {label:'Ativos em '+analyticsDays+' dias',value:String(analytics.activeDrivers),Icon:Activity},
+      {label:'Novos cadastros',value:String(analytics.newDrivers),Icon:Plus},
+      {label:'Assinaturas pagas ativas',value:String(analytics.payingSubscribers),Icon:ShieldCheck},
+      {label:'Cortesias ativas',value:String(analytics.activeCourtesy),Icon:Gift},
+      {label:'Assinaturas com cancelamento programado',value:String(analytics.cancelAtPeriodEnd),Icon:CalendarClock},
+      {label:'Pagamentos aprovados',value:String(analytics.approvedPayments),Icon:CheckCircle2},
+      {label:'Receita aprovada',value:formatMoney(analytics.approvedRevenueCents),Icon:Wallet},
+      {label:'Projeção mensal teórica',value:formatMoney(analytics.monthlyProjectionCents),Icon:Wallet},
+      {label:'Assinantes / cadastrados',value:analytics.activeSubscriptionRatio+'%',Icon:Users},
+      {label:'Retenção de coorte',value:analytics.retentionPercent===null?'N/D':analytics.retentionPercent+'%',Icon:Activity},
+      {label:'Entregas particulares no período',value:String(analytics.privateDeliveries),Icon:ClipboardList},
+      {label:'Clientes particulares cadastrados',value:String(analytics.privateCustomers),Icon:Users},
+      {label:'Utilizações de IA',value:String(analytics.ai.calls),Icon:Activity}
+     ].map(({label,value,Icon})=><div className="admin-stat" key={label}><Icon size={18}/><small>{label}</small><strong>{value}</strong></div>)}</div>
+    </Panel>
+    <Panel title="Uso agregado dos lançamentos" subtitle="Dados do período por origem cadastrada; sem identificação de motoboys">
+     <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Tipo</th><th>Origem</th><th>Quantidade</th><th>Valor</th></tr></thead><tbody>{analytics.earnings.map((r,i)=><tr key={i}><td>{r.type==='income'?'Receita':'Despesa'}</td><td>{r.provider||r.platform||r.source||'Não informada'}</td><td>{r.count}</td><td>{formatMoney(r.amountCents)}</td></tr>)}</tbody></table></div>
+     {!analytics.earnings.length&&<Empty message="Sem lançamentos nesse período."/>}
+    </Panel>
+    <Panel title="Como interpretar estes números" subtitle={`Gerado em ${date(analytics.generatedAt)}`}><div className="stack">{analytics.notes.map((n,i)=><p key={i} className="admin-small">{n}</p>)}<p className="admin-small">Estimativa de custo IA: {analytics.ai.estimatedUsd===null?'não configurada':'US$ '+analytics.ai.estimatedUsd.toFixed(5)}.</p></div></Panel>
    </>}
    {tab==='audit'&&<Panel title="Histórico de ações administrativas" subtitle="Mudanças de bloqueio, cortesias, campanhas e configurações">
     <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Quando</th><th>Ação</th><th>Informações</th></tr></thead><tbody>{audit.map(x=><tr key={x._id}><td>{date(x.createdAt)}</td><td><code>{x.action}</code></td><td><small>{Object.entries(x.metadata||{}).map(([k,v])=>`${k}: ${String(v)}`).join(' · ').slice(0,180)||'—'}</small></td></tr>)}</tbody></table></div>

@@ -472,3 +472,60 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .referral-code{background:#30281d;border:1px solid #55452e}
 .referral-code span{color:#b7a68b}
 .referral-code strong{color:#f1c073}
+
+/* MotoPRO 1.5.0 — entregas particulares, comparação financeira e conquistas */
+.phase3-header-actions,.phase3-tabbar{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-width:0}
+.phase3-header-actions .btn{white-space:nowrap;min-height:38px}
+.phase3-tabbar{margin:0 0 18px}
+.phase3-stats{margin-bottom:20px}
+.phase3-panels{align-items:start}
+.phase3-panels>.panel{min-width:0;overflow-wrap:anywhere}
+.phase3-delivery-list,.phase3-campaigns{display:grid;gap:12px}
+.phase3-delivery{background:linear-gradient(115deg,#252017,#191711);border:1px solid #554631;border-radius:14px;padding:15px;min-width:0;overflow-wrap:anywhere}
+.phase3-delivery>small,.phase3-delivery>p{display:block;margin-top:7px;color:#bba98a;line-height:1.6}
+.phase3-delivery>h3{margin-bottom:7px;color:#ffe0a7}
+.phase3-delivery-actions{margin-top:12px;gap:14px;align-items:center;flex-wrap:wrap}
+.phase3-delivery-actions .phase3-header-actions{margin-left:auto}
+.phase3-delivery-actions .btn{font-size:12px;padding:9px 12px}
+.phase3-price{color:#f4ca83;white-space:nowrap;font-size:18px}
+.phase3-pager{margin-top:16px;gap:12px;flex-wrap:wrap}
+.phase3-customer-actions{margin-top:14px}
+.phase3-customer-actions .btn{font-size:11px;padding:8px 10px}
+.phase3-footnote{margin:20px 0;line-height:1.8}
+.phase3-date-form{display:flex;align-items:end;flex-wrap:wrap;gap:14px}
+.phase3-date-form>.field{flex:1 1 185px;min-width:0}
+.phase3-date-form>.btn{min-height:44px}
+.phase3-bars{display:grid;gap:19px}
+.phase3-bar-row{display:grid;gap:8px;min-width:0}
+.phase3-bar-row>.row-between{flex-wrap:wrap;gap:10px}
+.phase3-bar-row>small{font-size:12px;color:#a79a83}
+.phase3-bar-track{background:#373028;border-radius:50px;height:9px;overflow:hidden;width:100%;min-width:0}
+.phase3-bar-track>span{height:100%;background:linear-gradient(90deg,#986727,#ffca76);display:block;border-radius:inherit;transition:width .2s ease}
+.phase3-achievements{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.phase3-achievement{display:flex;gap:13px;min-width:0;border:1px solid #433b30;border-radius:16px;padding:16px;background:#1a1917}
+.phase3-achievement.achieved{border-color:#7c5d34;background:linear-gradient(120deg,#2e271d,#1a1916)}
+.phase3-achievement-icon{flex:0 0 43px;height:43px;border-radius:12px;border:1px solid #5c4b31;background:#342b20;color:#d2bb91;display:grid;place-items:center}
+.phase3-achievement.achieved .phase3-achievement-icon{background:#5f4828;color:#ffdf9c}
+.phase3-achievement-content{flex:1;min-width:0;display:grid;gap:8px}
+.phase3-achievement-content>p{color:#b5a58b;font-size:12px;line-height:1.5;margin:0}
+.phase3-achievement-content>small{font-size:11px;color:#bba98c}
+.phase3-achievement-content .pill{font-size:10px;display:inline-flex;gap:3px;align-items:center;white-space:nowrap}
+.phase3-achievement-content .row-between{flex-wrap:wrap}
+.phase3-inline-filter{display:flex;align-items:center;gap:9px;color:#dac6a3;font-size:13px}
+.phase3-inline-filter .select{width:auto;min-width:108px}
+@media(max-width:850px){.phase3-achievements{grid-template-columns:1fr}.phase3-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.phase3-header-actions .btn{font-size:11px;padding:9px 10px}.phase3-date-form>.field{flex-basis:100%}.phase3-date-form>.btn{width:100%}.phase3-achievement{padding:12px;gap:10px}.phase3-achievement-icon{flex-basis:38px;height:38px}.phase3-panels .panel{padding:18px 14px}.phase3-price{font-size:16px}.phase3-customer-actions .btn{flex:1}}
+@media print{
+ body,.app-shell,.app-main,.page-wrap{background:#fff!important;color:#121212!important;box-shadow:none!important}
+ .sidebar,.topbar,.mobile-bottom-nav,.page-actions,.phase3-tabbar,.phase3-header-actions,.phase3-date-form,.phase3-pager,.phase3-footnote,.page-footer,.admin-tabs,.form-actions,.renewal-shell-banner{display:none!important}
+ .app-main{margin:0!important;max-width:100%!important;width:100%!important}
+ .page-wrap{padding:10px!important;max-width:100%!important}
+ .panel,.metric,.admin-stat,.phase3-delivery{background:#fff!important;color:#111!important;box-shadow:none!important;border:1px solid #bbb!important;break-inside:avoid}
+ .panel-header h2,.page-header h1,.phase3-delivery strong,.admin-stat strong,.phase3-price,.admin-table td,.admin-table th{color:#111!important}
+ .page-header p,.panel p,.phase3-delivery small,.admin-stat small{color:#333!important}
+ .phase3-bar-track{background:#ddd!important}.phase3-bar-track>span{background:#888!important}
+ .phase3-panels>.panel:first-child{display:none!important}
+ .phase3-achievements{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+.phase3-customer-search{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.phase3-customer-search .input{flex:1;min-width:145px}
