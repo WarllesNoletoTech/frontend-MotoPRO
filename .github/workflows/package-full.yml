@@ -1,0 +1,58 @@
+name: ZIP completo MotoPRO Fase 1
+on:
+  push:
+    branches:
+      - feat/fase1-financeiro-admin-20261111
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obter frontend da Fase 1
+        uses: actions/checkout@v4
+        with:
+          repository: WarllesNoletoTech/frontend-MotoPRO
+          ref: feat/fase1-financeiro-admin-20261111
+          path: MotoPRO_FASE1_COMPLETO/frontend-MotoPRO
+      - name: Obter backend da Fase 1
+        uses: actions/checkout@v4
+        with:
+          repository: WarllesNoletoTech/backend-MotoPRO
+          ref: feat/fase1-financeiro-admin-20261111
+          path: MotoPRO_FASE1_COMPLETO/backend-MotoPRO
+      - name: Limpar e adicionar instruções
+        run: |
+          rm -rf MotoPRO_FASE1_COMPLETO/frontend-MotoPRO/.git
+          rm -rf MotoPRO_FASE1_COMPLETO/backend-MotoPRO/.git
+          rm -rf MotoPRO_FASE1_COMPLETO/frontend-MotoPRO/node_modules
+          rm -rf MotoPRO_FASE1_COMPLETO/backend-MotoPRO/node_modules
+          cat > MotoPRO_FASE1_COMPLETO/LEIA_PRIMEIRO.txt <<'EOF'
+          MotoPRO - Fase 1 completa (frontend e backend)
+          =================================================
+          frontend-MotoPRO: Next.js 15, deploy na Vercel
+          backend-MotoPRO: Node.js/Express, deploy no Heroku
+
+          Publicação:
+          1. Publique o backend no Heroku e valide /api/health.
+          2. Na Vercel, configure API_INTERNAL_URL com a ORIGEM HTTPS real
+             do backend, sem /api e sem barra final (Preview e Production).
+          3. Faça Redeploy do frontend depois de definir a variável.
+          4. No Heroku, APP_ORIGIN deve ser a origem HTTPS real da Vercel.
+          5. Homologue assinaturas, Rappidex, login e cortesias.
+          6. Execute npm ci, npm run typecheck e npm run build
+             em cada pasta antes de substituir a produção.
+
+          ATENÇÃO: o build do frontend agora funciona sem API_INTERNAL_URL,
+          mas as rotas /api/* retornam 503 enquanto ela não for configurada.
+          Não copie senhas, tokens nem .env de produção para este pacote.
+          EOF
+      - name: Disponibilizar ZIP completo
+        uses: actions/upload-artifact@v4
+        with:
+          name: MotoPRO_FASE1_COMPLETO_FRONT_BACK
+          path: MotoPRO_FASE1_COMPLETO/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 30

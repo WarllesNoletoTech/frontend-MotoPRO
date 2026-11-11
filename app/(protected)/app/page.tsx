@@ -19,7 +19,17 @@ export default function DashboardPage(){
    <div className="metric"><span className="metric-label">Ganhos registrados</span><ArrowUpRight size={24} className="metric-icon"/><strong className="metric-value">{formatMoney(data.incomeCents)}</strong><span className="metric-note">Entradas no período</span></div>
    <div className="metric"><span className="metric-label">Despesas registradas</span><ArrowDownRight size={24} className="metric-icon"/><strong className="metric-value">{formatMoney(data.expenseCents)}</strong><span className="metric-note">Gastos informados por você</span></div>
   </div>
-  <div className="highlight-strip" style={{marginBottom:19}}><span className="badge-icon"><Mic size={23}/></span><div><strong>Seu financeiro, só na voz.</strong><p>Diga "Abasteci 35 reais" ou "Quanto lucrei essa semana?"</p></div><Link className="btn" href="/app/assistente">Abrir assistente <ArrowRight size={15}/></Link></div>
+  {data.month&&<Panel title="Seu resultado mensal" subtitle={`De ${dateLabel(data.month.period.from)} até ${dateLabel(data.month.period.to)}`} action={<Link href="/app/metas" className="inline-link">Gerenciar meta →</Link>}>
+   <div className="row-between"><span>Ganhos: <strong>{formatMoney(data.month.incomeCents)}</strong></span><span>Despesas: <strong>{formatMoney(data.month.expenseCents)}</strong></span></div>
+   <div className="row-between"><span>Lucro estimado no mês</span><strong>{formatMoney(data.month.profitCents)}</strong></div>
+   {data.month.targetCents>0?<div className="stack-sm">
+    <div className="row-between"><strong>{data.month.progressPercent}% da meta mensal</strong><span>{formatMoney(data.month.targetCents)}</span></div>
+    <div className="progress-bar"><div className="progress-fill" style={{width:`${data.month.progressPercent}%`}}/></div>
+    <p className="tiny-note">Faltam {formatMoney(data.month.remainingCents)}. Média necessária: {formatMoney(data.month.requiredDailyCents)} por dia de calendário restante (incluindo hoje).</p>
+   </div>:<p className="tiny-note">Cadastre uma meta mensal para acompanhar a evolução do seu lucro.</p>}
+  </Panel>}
+  <div style={{height:16}}/>
+    <div className="highlight-strip" style={{marginBottom:19}}><span className="badge-icon"><Mic size={23}/></span><div><strong>Seu financeiro, só na voz.</strong><p>Diga "Abasteci 35 reais" ou "Quanto lucrei essa semana?"</p></div><Link className="btn" href="/app/assistente">Abrir assistente <ArrowRight size={15}/></Link></div>
   <div className="two-col">
    <Panel title="Ganhos por dia" subtitle={`Semana: ${dateLabel(data.period.from)} a ${dateLabel(data.period.to)}`} action={<span className="pill">Terça a segunda</span>}>
     <div className="bar-chart">{data.byDay.map(day=><div className="bar-item" key={day.day} title={`${dateLabel(day.day)} · ${formatMoney(day.incomeCents)}`}><div className="bar" style={{height:`${Math.max(2,day.incomeCents/max*100)}%`}}/><span className="bar-label">{dateLabel(day.day)}</span></div>)}</div>
@@ -29,7 +39,7 @@ export default function DashboardPage(){
     <Panel title="Minha meta" subtitle="Lucro estimado da semana" action={<Target size={19} color="#b88738"/>}>
      {goal?<><div className="row-between"><strong style={{font:'700 27px Outfit'}}>{progress}%</strong><span className="text-muted" style={{fontSize:12}}>Meta de {formatMoney(goal)}</span></div><div className="progress-bar"><div className="progress-fill" style={{width:`${progress}%`}}/></div><div className="progress-info"><span>{formatMoney(Math.max(0,data.profitCents))}</span><span className="text-muted">Faltam {formatMoney(Math.max(0,goal-data.profitCents))}</span></div></>:<><p className="text-muted" style={{fontSize:13,marginBottom:15}}>Defina quanto deseja lucrar por semana e acompanhe sua evolução.</p><Link href="/app/metas" className="btn secondary">Definir meta</Link></>}
     </Panel>
-    <Panel title="Acesso rápido"><div className="stack-sm"><Link href="/app/lancamentos" className="btn wide secondary"><Plus size={17}/> Registrar lançamento</Link><Link href="/app/moto" className="btn wide outline"><Fuel size={17}/> Minha moto</Link></div></Panel>
+    <Panel title="Acesso rápido"><div className="stack-sm"><Link href="/app/lancamentos" className="btn wide secondary"><Plus size={17}/> Registrar lançamento</Link><Link href="/app/moto" className="btn wide outline"><Fuel size={17}/> Minha moto</Link><Link href="/app/relatorios" className="btn wide outline"><ReceiptText size={17}/> Fechamento semanal</Link></div></Panel>
    </div>
   </div>
   <div style={{height:18}}/>
