@@ -74,6 +74,22 @@ export default function AdminPage(){
   void run(fn,actionKind==='courtesy'?'Cortesia concedida':actionKind==='block'?'Conta bloqueada':'Conta desbloqueada');
   setActionUser(null);setReason('');
  };
+ const confirmPayout=async()=>{
+  if(!payoutReferral||saving)return;
+  const note=payoutNote.trim();
+  if(note.length<4){setError('Informe uma observação do repasse de pelo menos quatro caracteres');return;}
+  const referralId=payoutReferral.id;
+  setSaving(true);setError('');setSuccess('');
+  try{
+   await api(`/admin/billing/referrals/${encodeURIComponent(referralId)}/mark-paid`,{
+    method:'POST',body:JSON.stringify({note})
+   });
+   setPayoutReferral(null);setPayoutNote('');
+   setSuccess('Repasse da indicação registrado como pago');
+   await load();
+  }catch(e){setError(e instanceof Error?e.message:'Não foi possível registrar o repasse');}
+  finally{setSaving(false);}
+ };
  const saveCampaign=()=>void run(async()=>{
   const path=editingCampaign?`/admin/billing/campaigns/${editingCampaign}`:'/admin/billing/campaigns';
   await api(path,{method:editingCampaign?'PATCH':'POST',body:JSON.stringify(campaignForm)});
