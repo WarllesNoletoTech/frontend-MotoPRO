@@ -57,3 +57,7 @@ A API exige `RESEND_API_KEY` e `REPORTS_FROM_EMAIL` reais no Heroku e o processo
 agendado `npm run reports:weekly`. A Vercel não executa esse agendamento;
 a inclusão do código não configura automaticamente a entrega de e-mails.
 O painel Admin → Sistema mostra quantidade de e-mails habilitados, enviados e falhos.
+
+## Fase 2 — MotoPRO v1.4.0
+
+Telas novas: `/app/comprovantes` (fotografia, análise e confirmação) e `/app/conciliacao` (conferência de ganhos importados), além de planos de manutenção em `/app/moto`, dupla leitura opcional em `/app/assistente` e indicadores de IA em Admin > Sistema. Necessário publicar o backend da Fase 2 antes do frontend.

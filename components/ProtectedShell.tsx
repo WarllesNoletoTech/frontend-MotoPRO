@@ -2,7 +2,7 @@
 import {useEffect,useState} from 'react';
 import Link from 'next/link';
 import {usePathname,useRouter} from 'next/navigation';
-import {LayoutDashboard,ReceiptText,Mic2,Bike,Target,Plug,ShieldCheck,LogOut,Settings,Gift,ChevronRight,LoaderCircle,Menu,X,Wallet,CalendarClock,LockKeyhole,QrCode,FileBarChart2} from 'lucide-react';
+import {LayoutDashboard,ReceiptText,Mic2,Bike,Target,Plug,ShieldCheck,LogOut,Settings,Gift,ChevronRight,LoaderCircle,Menu,X,Wallet,CalendarClock,LockKeyhole,QrCode,FileBarChart2,ScanLine,GitCompareArrows} from 'lucide-react';
 import {api} from '@/lib/api';
 import {readBillingStatus} from '@/lib/billingContract';
 import CompletePhone from '@/components/CompletePhone';
@@ -15,6 +15,8 @@ const navigation=[
  {href:'/app/moto',label:'Minha moto',Icon:Bike},
  {href:'/app/metas',label:'Metas',Icon:Target},
  {href:'/app/relatorios',label:'Relatórios',Icon:FileBarChart2},
+ {href:'/app/comprovantes',label:'Ler comprovante',Icon:ScanLine},
+ {href:'/app/conciliacao',label:'Conciliação',Icon:GitCompareArrows},
  {href:'/app/integracoes',label:'Integrações',Icon:Plug},
  {href:'/app/assinatura',label:'Assinatura',Icon:ShieldCheck},
  {href:'/app/premiacoes',label:'Benefícios',Icon:Gift},

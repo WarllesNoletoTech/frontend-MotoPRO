@@ -24,7 +24,7 @@ type Insights={user:{id:string;name:string;email:string;phone:string|null;create
  goal:{weeklyTargetCents:number;monthlyTargetCents:number}|null;
  integration:{provider:string;remoteName:string;lastSyncAt:string|null}|null;
  subscription:{status:string;method:string;activeUntil:string|null}|null;courtesy:{activeUntil:string;lastGrantedAt:string;reason:string}|null};
-type SystemInfo={weeklyEmailConfigured:boolean;weeklyEmailSubscribers:number;weeklyEmailSent7d:number;weeklyEmailFailed7d:number;checkedAt:string;apiOnline:boolean;databaseConnected:boolean;uptimeSeconds:number;registeredTotal:number;registered7d:number;active24h:number;active7d:number;entries7d:number;entriesTotal:number;approvedPayments7d:number;approvedCents7d:number;note:string;recentUsers:{id:string;name:string;createdAt:string;lastActivityAt:string|null}[]};
+type SystemInfo={automation?:{last30d:number;confirmedReceipts:number;activeMaintenancePlans:number;last7d:{feature:string;outcome:string;count:number;inputTokens:number;outputTokens:number;estimatedUsd:number|null}[]};weeklyEmailConfigured:boolean;weeklyEmailSubscribers:number;weeklyEmailSent7d:number;weeklyEmailFailed7d:number;checkedAt:string;apiOnline:boolean;databaseConnected:boolean;uptimeSeconds:number;registeredTotal:number;registered7d:number;active24h:number;active7d:number;entries7d:number;entriesTotal:number;approvedPayments7d:number;approvedCents7d:number;note:string;recentUsers:{id:string;name:string;createdAt:string;lastActivityAt:string|null}[]};
 const tabs:{id:Tab;label:string;Icon:typeof Users}[]=[
  {id:'overview',label:'Visão geral',Icon:Wallet},{id:'users',label:'Motoboys',Icon:Users},
  {id:'subscriptions',label:'Assinaturas',Icon:ShieldCheck},{id:'payments',label:'Financeiro',Icon:Wallet},
@@ -228,8 +228,16 @@ export default function AdminPage(){
      {label:'Pagamentos aprovados em 7 dias',value:String(system.approvedPayments7d),Icon:CheckCircle2},
      {label:'E-mails semanais ativados',value:String(system.weeklyEmailSubscribers),Icon:Activity},
      {label:'Relatórios enviados em 7 dias',value:String(system.weeklyEmailSent7d),Icon:CheckCircle2},
-     {label:'Falhas de envio em 7 dias',value:String(system.weeklyEmailFailed7d),Icon:History}
+     {label:'Falhas de envio em 7 dias',value:String(system.weeklyEmailFailed7d),Icon:History},
+     {label:'Chamadas de IA em 30 dias',value:String(system.automation?.last30d??0),Icon:Activity},
+     {label:'Comprovantes confirmados',value:String(system.automation?.confirmedReceipts??0),Icon:ClipboardList},
+     {label:'Planos de manutenção ativos',value:String(system.automation?.activeMaintenancePlans??0),Icon:Activity}
     ].map(({label,value,Icon})=><div className="admin-stat" key={label}><Icon size={18}/><small>{label}</small><strong>{value}</strong></div>)}</div>
+    {system.automation&&<Panel title="Consumo de inteligência artificial · últimos 7 dias" subtitle="Chamadas agregadas; nenhuma imagem ou transcrição é armazenada nas métricas">
+     <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Recurso</th><th>Resultado</th><th>Chamadas</th><th>Tokens</th><th>Custo estimado (USD)</th></tr></thead><tbody>{system.automation.last7d.map((v,i)=><tr key={i}><td>{v.feature==='transcription'?'Transcrição':v.feature==='receipt'?'Comprovantes':'Interpretação'}</td><td>{v.outcome==='success'?'OK':v.outcome==='failed'?'Falhou':'Modo básico'}</td><td>{v.count}</td><td>{(v.inputTokens+v.outputTokens).toLocaleString('pt-BR')}</td><td>{v.estimatedUsd===null?'Não configurado':`US$ ${v.estimatedUsd.toFixed(5)}`}</td></tr>)}</tbody></table></div>
+     {!system.automation.last7d.length&&<p className="field-hint">Sem uso registrado nos últimos 7 dias.</p>}
+     <p className="admin-small">Valores em dólar são estimados somente quando OPENAI_INPUT_USD_PER_1M e OPENAI_OUTPUT_USD_PER_1M estiverem configuradas. Transcrições de áudio podem ser cobradas por outro critério; confira a fatura oficial da OpenAI.</p>
+    </Panel>}
     <div className="two-col">
      <Panel title="Operação" subtitle={`Conferido em ${date(system.checkedAt)}`}>
       <p>Motoboys cadastrados: <strong>{system.registeredTotal}</strong></p>

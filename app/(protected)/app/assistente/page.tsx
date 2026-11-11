@@ -31,6 +31,7 @@ export default function AssistantPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [entrySource, setEntrySource] = useState<'voice' | 'manual'>('manual');
+  const [doubleCheck, setDoubleCheck] = useState(false);
 
   const recorder = useRef<MediaRecorder | null>(null);
   const stream = useRef<MediaStream | null>(null);
@@ -187,7 +188,8 @@ export default function AssistantPage() {
           const fd = new FormData();
           fd.append('audio', blob, `comando.${ext}`);
           fd.append('durationMs', String(elapsedAtStop.current));
-          const response = await api<{text: string}>('/assistant/transcribe', {
+          if(doubleCheck)fd.append('doubleCheck','true');
+          const response = await api<{text:string;alternative?:string;requiresReview?:boolean;warning?:string}>('/assistant/transcribe', {
             method: 'POST', body: fd,
           });
           if (!mounted.current) return;
@@ -195,10 +197,11 @@ export default function AssistantPage() {
           if (!spoken) throw new Error('Não foi possível identificar sua fala. Tente novamente.');
           setTranscript(spoken);
           setFirstTranscript(spoken);
-          setAlternateTranscript('');
+          setAlternateTranscript(response.alternative||'');
           setText(spoken); // Permite corrigir a transcrição manualmente, se necessário.
-          setVoiceInfo('Transcrição pronta. Confira abaixo antes de salvar.');
-          await interpret(spoken, 'voice');
+          setVoiceInfo(response.warning||'Transcrição pronta. Confira abaixo antes de salvar.');
+          if(!response.requiresReview)await interpret(spoken,'voice');
+          else setPending(null); // Duas leituras divergentes exigem seleção e nova interpretação.
         } catch (e) {
           if (mounted.current) {
             setVoiceError((e as Error).message);
@@ -314,7 +317,7 @@ export default function AssistantPage() {
         <div className="assistant-box">
           <Sparkles color="#e8bf7d" size={22}/>
           <strong style={{font: '700 24px Outfit'}}>Assistente MotoPRO</strong>
-          <p>Fale com a moto parada. O comando é encerrado automaticamente após 10 segundos.</p>
+          <p>Fale com a moto parada. O comando é encerrado automaticamente após 10 segundos. O áudio é processado por um serviço de transcrição externo, sem ser salvo no MotoPRO.</p>
           <button
             type="button"
             className={`assistant-mic ${recording ? 'recording' : ''}`}
@@ -330,6 +333,7 @@ export default function AssistantPage() {
               : transcribing ? 'Transcrevendo áudio…'
               : processing ? 'Interpretando comando…' : 'Toque para falar'}
           </strong>
+          <label className="field-hint" style={{display:'flex',alignItems:'center',gap:8,marginTop:8}}><input type="checkbox" checked={doubleCheck} disabled={recording||transcribing||processing} onChange={e=>setDoubleCheck(e.target.checked)}/> Conferir gravação com dois modelos (duas transcrições, maior consumo de API)</label>
           <div className="assistant-recording-time">
             <Clock3 size={14}/> Limite máximo: 10 segundos
           </div>
