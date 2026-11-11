@@ -6,8 +6,6 @@ on:
 jobs:
   typecheck-and-build:
     runs-on: ubuntu-latest
-    env:
-      API_INTERNAL_URL: https://example.com
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
