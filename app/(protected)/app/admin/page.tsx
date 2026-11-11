@@ -1,13 +1,13 @@
 'use client';
 import {useEffect,useState,useCallback} from 'react';
-import {Users,Wallet,ShieldCheck,Gift,Settings2,History,RefreshCcw,Search,Ban,CheckCircle2,Plus,CalendarClock,Save} from 'lucide-react';
+import {Users,Wallet,ShieldCheck,Gift,Settings2,History,RefreshCcw,Search,Ban,CheckCircle2,Plus,CalendarClock,Save,Activity,Eye,ClipboardList} from 'lucide-react';
 import {PageHeader,Panel,Loading,Notice,Empty} from '@/components/UI';
 import {api,formatMoney} from '@/lib/api';
 import {BillingStatusBadge} from '@/components/BillingStatusBadge';
 
-type Tab='overview'|'users'|'subscriptions'|'payments'|'referrals'|'campaigns'|'settings'|'audit';
-type Overview={trialDays:number;premiumRequired:boolean;users:number;blockedUsers:number;activeSubscribers:number;expiringSubscribers:number;expiredSubscribers:number;activeCourtesy:number;receivedCents:number;approvedPayments:number;weeklyPriceCents:number;billingEnabled:boolean;monthlyCampaign:{status:string;message:string}};
-type User={id:string;name:string;email:string;phone:string|null;blocked:boolean;blockReason:string;role:string;createdAt:string;lastLoginAt:string|null;trialEndsAt:string|null;subscription?:{status:string;method:string;activeUntil?:string}|null;courtesyUntil?:string|null};
+type Tab='overview'|'users'|'subscriptions'|'payments'|'referrals'|'campaigns'|'settings'|'audit'|'system';
+type Overview={active24h:number;new7d:number;entries7d:number;trialDays:number;premiumRequired:boolean;users:number;blockedUsers:number;activeSubscribers:number;expiringSubscribers:number;expiredSubscribers:number;activeCourtesy:number;receivedCents:number;approvedPayments:number;weeklyPriceCents:number;billingEnabled:boolean;monthlyCampaign:{status:string;message:string}};
+type User={id:string;name:string;email:string;phone:string|null;blocked:boolean;blockReason:string;role:string;createdAt:string;lastLoginAt:string|null;lastActivityAt:string|null;trialEndsAt:string|null;subscription?:{status:string;method:string;activeUntil?:string}|null;courtesyUntil?:string|null};
 type Subscription={id:string;userId:string;name:string;email:string;method:string;status:string;activeUntil:string|null;cancelAtPeriodEnd:boolean;priceCents:number};
 type Payment={id:string;userId:string;name:string;method:string;status:string;amountCents:number;providerPaymentId:string;createdAt:string;paidAt:string|null};
 type Referral={id:string;referrerId:string;referrerName:string;referrerPhone:string|null;referredName:string;amountCents:number;status:'available'|'paid'|'reversed';createdAt:string;paidAt:string|null;payoutNote:string};
@@ -16,12 +16,21 @@ type Campaign={_id:string;id:string;title:string;description:string;reward:strin
 type Settings={weeklyPriceCents:number;trialDays:number;premiumRequired:boolean;newRegistrationsOpen:boolean;announcement:string;maintenanceNotice:string;premiumBenefits:string[]};
 type Audit={_id:string;action:string;createdAt:string;metadata?:Record<string,unknown>};
 type Paged<T>={page:number;limit:number;total:number;items:T[]};
+type Courtesy={id:string;userId:string;name:string;email:string;phone:string|null;reason:string;grantedAt:string;activeUntil:string;status:'active'|'expired'};
+type Insights={user:{id:string;name:string;email:string;phone:string|null;createdAt:string;lastLoginAt:string|null;lastActivityAt:string|null;blocked:boolean};
+ entryCount:number;breakdown:{type:string;category:string;count:number;totalCents:number}[];
+ recent:{id:string;type:string;category:string;amountCents:number;occurredOn:string;description:string;source:string}[];
+ motorcycle:{model:string;year?:number;odometerKm?:number;kmPerLiter?:number}|null;maintenanceCount:number;pendingMaintenance:number;
+ goal:{weeklyTargetCents:number;monthlyTargetCents:number}|null;
+ integration:{provider:string;remoteName:string;lastSyncAt:string|null}|null;
+ subscription:{status:string;method:string;activeUntil:string|null}|null;courtesy:{activeUntil:string;lastGrantedAt:string;reason:string}|null};
+type SystemInfo={checkedAt:string;apiOnline:boolean;databaseConnected:boolean;uptimeSeconds:number;registeredTotal:number;registered7d:number;active24h:number;active7d:number;entries7d:number;entriesTotal:number;approvedPayments7d:number;approvedCents7d:number;note:string;recentUsers:{id:string;name:string;createdAt:string;lastActivityAt:string|null}[]};
 const tabs:{id:Tab;label:string;Icon:typeof Users}[]=[
  {id:'overview',label:'Visão geral',Icon:Wallet},{id:'users',label:'Motoboys',Icon:Users},
  {id:'subscriptions',label:'Assinaturas',Icon:ShieldCheck},{id:'payments',label:'Financeiro',Icon:Wallet},
  {id:'referrals',label:'Indicações',Icon:Gift},
  {id:'campaigns',label:'Campanhas',Icon:Gift},{id:'settings',label:'Configurações',Icon:Settings2},
- {id:'audit',label:'Auditoria',Icon:History}
+ {id:'audit',label:'Auditoria',Icon:History},{id:'system',label:'Sistema',Icon:Activity}
 ];
 const whatsappHref=(phone:string|null)=>{const d=(phone||'').replace(/\D/g,'');return /^55[1-9]{2}9\d{8}$/.test(d)?`https://wa.me/${d}`:null;};
 const date=(v?:string|null)=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
@@ -34,6 +43,9 @@ export default function AdminPage(){
  const [overview,setOverview]=useState<Overview|null>(null);
  const [users,setUsers]=useState<Paged<User>|null>(null),[userSearch,setUserSearch]=useState(''),[userFilter,setUserFilter]=useState('all'),[userPage,setUserPage]=useState(1);
  const [subscriptions,setSubscriptions]=useState<Paged<Subscription>|null>(null),[subStatus,setSubStatus]=useState('all'),[subPage,setSubPage]=useState(1);
+ const [courtesies,setCourtesies]=useState<Paged<Courtesy>|null>(null),[courtesyStatus,setCourtesyStatus]=useState('all'),[courtesyPage,setCourtesyPage]=useState(1);
+ const [insights,setInsights]=useState<Insights|null>(null),[insightsBusy,setInsightsBusy]=useState(false);
+ const [system,setSystem]=useState<SystemInfo|null>(null);
  const [payments,setPayments]=useState<(Paged<Payment>&{approvedCents:number;approvedCount:number})|null>(null);
  const [payStatus,setPayStatus]=useState('all'),[payMethod,setPayMethod]=useState('all'),[payFrom,setPayFrom]=useState(''),[payTo,setPayTo]=useState(''),[payPage,setPayPage]=useState(1);
  const [campaigns,setCampaigns]=useState<Campaign[]>([]),[audit,setAudit]=useState<Audit[]>([]);
@@ -48,21 +60,34 @@ export default function AdminPage(){
   try{
    if(tab==='overview')setOverview(await api<Overview>('/admin/billing/overview'));
    if(tab==='users')setUsers(await api<Paged<User>>(`/admin/billing/users?page=${userPage}&limit=15&filter=${userFilter}&search=${encodeURIComponent(userSearch)}`));
-   if(tab==='subscriptions')setSubscriptions(await api<Paged<Subscription>>(`/admin/billing/subscriptions?page=${subPage}&limit=15&status=${subStatus}`));
+   if(tab==='subscriptions'){
+     const [paid,gifts]=await Promise.all([
+       api<Paged<Subscription>>(`/admin/billing/subscriptions?page=${subPage}&limit=15&status=${subStatus}`),
+       api<Paged<Courtesy>>(`/admin/billing/courtesies?page=${courtesyPage}&limit=15&status=${courtesyStatus}`)
+     ]);
+     setSubscriptions(paid);setCourtesies(gifts);
+    }
    if(tab==='payments')setPayments(await api<Paged<Payment>&{approvedCents:number;approvedCount:number}>(`/admin/billing/payments?page=${payPage}&limit=15&status=${payStatus}&method=${payMethod}${payFrom?'&from='+payFrom:''}${payTo?'&to='+payTo:''}`));
    if(tab==='referrals')setReferrals(await api<ReferralPage>(`/admin/billing/referrals?page=${referralPage}&limit=15&status=${referralStatus}`));
    if(tab==='campaigns')setCampaigns((await api<{items:Campaign[]}>('/admin/billing/campaigns')).items);
    if(tab==='settings'){const result=await api<{settings:Settings}>('/admin/billing/settings');setSettings(result.settings);setBenefitText(result.settings.premiumBenefits.join('\n'));setPriceInput((result.settings.weeklyPriceCents/100).toFixed(2).replace('.',','));}
    if(tab==='audit')setAudit((await api<{items:Audit[]}>('/admin/billing/audit')).items);
+    if(tab==='system')setSystem(await api<SystemInfo>('/admin/billing/system'));
   }catch(e){setError(e instanceof Error?e.message:'Não foi possível carregar os dados');}
   finally{setLoading(false);}
- },[tab,userPage,userFilter,userSearch,subPage,subStatus,payPage,payStatus,payMethod,payFrom,payTo,referralPage,referralStatus]);
+ },[tab,userPage,userFilter,userSearch,subPage,subStatus,payPage,payStatus,payMethod,payFrom,payTo,referralPage,referralStatus,courtesyPage,courtesyStatus]);
  useEffect(()=>{void load();},[load]);
  const run=async(fn:()=>Promise<unknown>,message:string)=>{
   setSaving(true);setError('');setSuccess('');
   try{await fn();setSuccess(message);await load();}
   catch(e){setError(e instanceof Error?e.message:'A operação falhou');}
   finally{setSaving(false);}
+ };
+ const openInsights=async(user:User)=>{
+  setError('');setInsightsBusy(true);
+  try{setInsights(await api<Insights>(`/admin/billing/users/${user.id}/insights`));}
+  catch(e){setError(e instanceof Error?e.message:'Não foi possível carregar os registros');}
+  finally{setInsightsBusy(false);}
  };
  const confirmUser=()=>{
   if(!actionUser)return;
@@ -100,7 +125,7 @@ export default function AdminPage(){
   void run(()=>api(`/admin/billing/campaigns/${id}`,{method:'PATCH',body:JSON.stringify({status})}),'Situação da campanha atualizada');
  };
  return <>
-  <PageHeader eyebrow="ADMINISTRAÇÃO • ACESSO EXCLUSIVO" title="Painel MotoPRO" description="Controle comercial, assinaturas, contas e campanhas. Dados financeiros individuais dos entregadores permanecem privados." actions={<button className="btn secondary" onClick={()=>void load()} disabled={loading}><RefreshCcw size={16}/> Atualizar</button>}/>
+  <PageHeader eyebrow="ADMINISTRAÇÃO • ACESSO EXCLUSIVO" title="Painel MotoPRO" description="Gestão de usuários, atividade, registros, assinaturas, cortesias, financeiro e saúde da API. Consultas individuais são auditadas." actions={<button className="btn secondary" onClick={()=>void load()} disabled={loading}><RefreshCcw size={16}/> Atualizar</button>}/>
   <div className="admin-tabs" role="tablist" aria-label="Módulos administrativos">{tabs.map(({id,label,Icon})=><button role="tab" aria-selected={tab===id} key={id} className={tab===id?'active':''} onClick={()=>{setTab(id);setError('');setSuccess('');}}><Icon size={17}/>{label}</button>)}</div>
   {error&&<Notice kind="error">{error}</Notice>}
   {success&&<Notice kind="success">{success}</Notice>}
@@ -108,6 +133,9 @@ export default function AdminPage(){
    {tab==='overview'&&overview&&<>
     <div className="admin-stat-grid">{[
       {label:'Motoboys cadastrados',value:String(overview.users),Icon:Users},
+      {label:'Ativos nas últimas 24 horas',value:String(overview.active24h),Icon:Activity},
+      {label:'Novos nos últimos 7 dias',value:String(overview.new7d),Icon:Plus},
+      {label:'Lançamentos nos últimos 7 dias',value:String(overview.entries7d),Icon:ClipboardList},
       {label:'Assinaturas pagas ativas',value:String(overview.activeSubscribers),Icon:ShieldCheck},
       {label:'Vencem em 48h',value:String(overview.expiringSubscribers),Icon:CalendarClock},
       {label:'Assinaturas vencidas',value:String(overview.expiredSubscribers),Icon:History},
@@ -120,7 +148,7 @@ export default function AdminPage(){
    {tab==='users'&&<>
     <Panel title="Gerenciar motoboys" subtitle="Pesquisar, bloquear/desbloquear e conceder cortesias com auditoria">
       <div className="admin-toolbar"><div className="admin-search"><Search size={16}/><input aria-label="Buscar entregador" className="input" value={userSearch} onChange={e=>{setUserSearch(e.target.value);setUserPage(1);}} placeholder="Buscar por nome ou e-mail"/></div><select aria-label="Filtrar contas" className="select" value={userFilter} onChange={e=>{setUserFilter(e.target.value);setUserPage(1);}}><option value="all">Todas as contas</option><option value="active">Liberadas</option><option value="blocked">Bloqueadas</option></select></div>
-      <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Motoboy</th><th>Cadastro / último acesso</th><th>Situação</th><th>Ações</th></tr></thead><tbody>{users?.items.map(u=><tr key={u.id}><td><strong>{u.name}</strong><small>{u.email}</small><small>{whatsappHref(u.phone)?<a className="admin-whatsapp" href={whatsappHref(u.phone)!} target="_blank" rel="noopener noreferrer" title="Conversar no WhatsApp">{u.phone} · WhatsApp ↗</a>:(u.phone||'Celular pendente')}</small></td><td>{date(u.createdAt)}<small>Último acesso: {date(u.lastLoginAt)}</small></td><td><span className={`admin-status ${u.blocked?'bad':'good'}`}>{u.blocked?'Bloqueado':'Liberado'}</span>{u.courtesyUntil&&new Date(u.courtesyUntil)>new Date()&&<small>Cortesia até {date(u.courtesyUntil)}</small>}</td><td><div className="admin-actions"><button className="btn secondary" onClick={()=>{setActionKind('courtesy');setActionUser(u);setReason('Cortesia de suporte');}}>Cortesia</button><button className={`btn ${u.blocked?'secondary':'danger'}`} onClick={()=>{setActionKind(u.blocked?'unblock':'block');setActionUser(u);setReason('');}}>{u.blocked?'Desbloquear':'Bloquear'}</button></div></td></tr>)}</tbody></table></div>
+      <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Motoboy</th><th>Cadastro / último acesso</th><th>Situação</th><th>Ações</th></tr></thead><tbody>{users?.items.map(u=><tr key={u.id}><td><strong>{u.name}</strong><small>{u.email}</small><small>{whatsappHref(u.phone)?<a className="admin-whatsapp" href={whatsappHref(u.phone)!} target="_blank" rel="noopener noreferrer" title="Conversar no WhatsApp">{u.phone} · WhatsApp ↗</a>:(u.phone||'Celular pendente')}</small></td><td>{date(u.createdAt)}<small>Último login: {date(u.lastLoginAt)}</small><small>Última atividade: {date(u.lastActivityAt)}</small></td><td><span className={`admin-status ${u.blocked?'bad':'good'}`}>{u.blocked?'Bloqueado':'Liberado'}</span>{u.courtesyUntil&&new Date(u.courtesyUntil)>new Date()&&<small>Cortesia até {date(u.courtesyUntil)}</small>}</td><td><div className="admin-actions"><button className="btn outline" onClick={()=>void openInsights(u)} disabled={insightsBusy}><Eye size={15}/> Detalhes</button><button className="btn secondary" onClick={()=>{setActionKind('courtesy');setActionUser(u);setReason('Cortesia de suporte');}}>Cortesia</button><button className={`btn ${u.blocked?'secondary':'danger'}`} onClick={()=>{setActionKind(u.blocked?'unblock':'block');setActionUser(u);setReason('');}}>{u.blocked?'Desbloquear':'Bloquear'}</button></div></td></tr>)}</tbody></table></div>
       {users?.items.length===0&&<Empty message="Nenhum motoboy encontrado"/>}
       <Pager page={userPage} total={users?.total??0} pageSize={15} onChange={setUserPage}/>
     </Panel>
