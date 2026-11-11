@@ -13,10 +13,10 @@ export default function AlertsPage(){
  return <>
   <PageHeader eyebrow="FASE 4 · ORGANIZAÇÃO" title="Central de avisos" description="Prazos de manutenção, próximas despesas e recebimentos particulares, tudo em um lugar." actions={<button className="btn secondary" onClick={()=>void load()} disabled={loading}><RefreshCw size={16}/> Atualizar</button>}/>
   {error&&<Notice kind="error">{error}</Notice>}
-  <Panel title="O que merece atenção" subtitle="Avisos calculados com seus registros. Não há monitoramento em segundo plano nem notificações push.">
+  <Panel title="O que merece atenção" subtitle="Avisos calculados com seus registros. Com sua permissão, o servidor também pode enviar avisos por notificação push quando o agendador estiver configurado.">
    {loading?<Loading/>:!payload?.items.length?<Empty message="Nenhuma pendência identificada nos seus registros neste momento."/>:<div className="stack-sm">{payload.items.map(item=><Link key={item.id} className="phase4-alert-item" href={item.href}><span className={`phase4-alert-icon ${item.level}`}>{item.level==='warning'?<AlertTriangle size={20}/>:<Bell size={20}/>}</span><span className="phase4-alert-body"><strong>{item.title}</strong><small>{item.description}</small>{item.dueOn&&<small><CalendarClock size={13} style={{verticalAlign:'middle'}}/> {dateLabel(item.dueOn)}</small>}</span><ChevronRight size={18}/></Link>)}</div>}
    {payload?.truncated&&<p className="tiny-note">Existem mais avisos. Resolva as pendências exibidas e atualize.</p>}
   </Panel>
-  <p className="tiny-note phase4-note">Os avisos não substituem manutenção técnica, conferência de pagamentos ou lembretes externos. Os dados são consultados quando você abre esta página.</p>
+  <p className="tiny-note phase4-note">Os avisos não substituem manutenção técnica, conferência de pagamentos ou lembretes externos. Os avisos desta página são calculados em tempo real. Para ativar push, entre em Configurações.</p>
  </>;
 }

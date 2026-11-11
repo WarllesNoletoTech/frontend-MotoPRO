@@ -26,6 +26,8 @@ if (apiOrigin) {
 }
 
 const nextConfig: NextConfig = {
+  // Limita workers para builds reproduzíveis em Vercel e máquinas de poucos recursos.
+  experimental: { cpus: 2 },
   async rewrites() {
     // Desenvolvimento local: Express na porta 4000, sem depender de .env.
     const destination = apiOrigin

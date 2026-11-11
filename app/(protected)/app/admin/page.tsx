@@ -5,7 +5,7 @@ import {PageHeader,Panel,Loading,Notice,Empty} from '@/components/UI';
 import {api,formatMoney} from '@/lib/api';
 import {BillingStatusBadge} from '@/components/BillingStatusBadge';
 
-type Tab='overview'|'users'|'subscriptions'|'payments'|'referrals'|'campaigns'|'settings'|'audit'|'system'|'analytics';
+type Tab='overview'|'users'|'subscriptions'|'payments'|'referrals'|'campaigns'|'settings'|'audit'|'system'|'analytics'|'privacy';
 type Overview={active24h:number;new7d:number;entries7d:number;trialDays:number;premiumRequired:boolean;users:number;blockedUsers:number;activeSubscribers:number;expiringSubscribers:number;expiredSubscribers:number;activeCourtesy:number;receivedCents:number;approvedPayments:number;weeklyPriceCents:number;billingEnabled:boolean;monthlyCampaign:{status:string;message:string}};
 type User={id:string;name:string;email:string;phone:string|null;blocked:boolean;blockReason:string;role:string;createdAt:string;lastLoginAt:string|null;lastActivityAt:string|null;trialEndsAt:string|null;subscription?:{status:string;method:string;activeUntil?:string}|null;courtesyUntil?:string|null};
 type Subscription={id:string;userId:string;name:string;email:string;method:string;status:string;activeUntil:string|null;cancelAtPeriodEnd:boolean;priceCents:number};
@@ -25,6 +25,8 @@ type Insights={user:{id:string;name:string;email:string;phone:string|null;create
  integration:{provider:string;remoteName:string;lastSyncAt:string|null}|null;
  subscription:{status:string;method:string;activeUntil:string|null}|null;courtesy:{activeUntil:string;lastGrantedAt:string;reason:string}|null};
 type AdminAnalytics={periodDays:number;generatedAt:string;users:number;activeDrivers:number;newDrivers:number;previousCohort:number;retainedDrivers:number;retentionPercent:number|null;payingSubscribers:number;activeCourtesy:number;cancelAtPeriodEnd:number;activeSubscriptionRatio:number;approvedPayments:number;approvedRevenueCents:number;monthlyProjectionCents:number;privateDeliveries:number;privateCustomers:number;earnings:{type:string;source:string;provider:string;platform:string;count:number;amountCents:number}[];ai:{calls:number;estimatedUsd:number|null};notes:string[]};
+type PrivacyRequestAdmin={id:string;user:{name:string;email:string}|null;type:'deletion'|'correction';note:string;status:'open'|'resolved';response:string;createdAt:string;resolvedAt:string|null};
+type OperationsInfo={checkedAt:string;trackedErrors24h:number;trackedSlow24h:number;pushConfigured:boolean;pushActiveDevices:number;pushDelivered7d:number;pushFailed7d:number;recent:{kind:string;status:number;method:string;route:string;durationMs:number;requestId:string;at:string}[];notes:string[]};
 type SystemInfo={automation?:{last30d:number;confirmedReceipts:number;activeMaintenancePlans:number;activeRecurrences:number;recurringEntries7d:number;last7d:{feature:string;outcome:string;count:number;inputTokens:number;outputTokens:number;estimatedUsd:number|null}[]};weeklyEmailConfigured:boolean;weeklyEmailSubscribers:number;weeklyEmailSent7d:number;weeklyEmailFailed7d:number;checkedAt:string;apiOnline:boolean;databaseConnected:boolean;uptimeSeconds:number;registeredTotal:number;registered7d:number;active24h:number;active7d:number;entries7d:number;entriesTotal:number;approvedPayments7d:number;approvedCents7d:number;note:string;recentUsers:{id:string;name:string;createdAt:string;lastActivityAt:string|null}[]};
 const tabs:{id:Tab;label:string;Icon:typeof Users}[]=[
  {id:'overview',label:'Visão geral',Icon:Wallet},{id:'users',label:'Motoboys',Icon:Users},
@@ -32,7 +34,8 @@ const tabs:{id:Tab;label:string;Icon:typeof Users}[]=[
  {id:'referrals',label:'Indicações',Icon:Gift},
  {id:'campaigns',label:'Campanhas',Icon:Gift},{id:'settings',label:'Configurações',Icon:Settings2},
  {id:'audit',label:'Auditoria',Icon:History},{id:'system',label:'Sistema',Icon:Activity},
- {id:'analytics',label:'Indicadores',Icon:BarChart3}
+ {id:'analytics',label:'Indicadores',Icon:BarChart3},
+ {id:'privacy',label:'Privacidade',Icon:ShieldCheck}
 ];
 const whatsappHref=(phone:string|null)=>{const d=(phone||'').replace(/\D/g,'');return /^55[1-9]{2}9\d{8}$/.test(d)?`https://wa.me/${d}`:null;};
 const date=(v?:string|null)=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
@@ -48,6 +51,9 @@ export default function AdminPage(){
  const [courtesies,setCourtesies]=useState<Paged<Courtesy>|null>(null),[courtesyStatus,setCourtesyStatus]=useState('all'),[courtesyPage,setCourtesyPage]=useState(1);
  const [insights,setInsights]=useState<Insights|null>(null),[insightsBusy,setInsightsBusy]=useState(false);
  const [system,setSystem]=useState<SystemInfo|null>(null);
+ const [operations,setOperations]=useState<OperationsInfo|null>(null);
+ const [privacyRequests,setPrivacyRequests]=useState<PrivacyRequestAdmin[]>([]);
+ const [privacyResponse,setPrivacyResponse]=useState<Record<string,string>>({});
  const [analytics,setAnalytics]=useState<AdminAnalytics|null>(null),[analyticsDays,setAnalyticsDays]=useState(30);
  const [payments,setPayments]=useState<(Paged<Payment>&{approvedCents:number;approvedCount:number})|null>(null);
  const [payStatus,setPayStatus]=useState('all'),[payMethod,setPayMethod]=useState('all'),[payFrom,setPayFrom]=useState(''),[payTo,setPayTo]=useState(''),[payPage,setPayPage]=useState(1);
@@ -75,7 +81,11 @@ export default function AdminPage(){
    if(tab==='campaigns')setCampaigns((await api<{items:Campaign[]}>('/admin/billing/campaigns')).items);
    if(tab==='settings'){const result=await api<{settings:Settings}>('/admin/billing/settings');setSettings(result.settings);setBenefitText(result.settings.premiumBenefits.join('\n'));setPriceInput((result.settings.weeklyPriceCents/100).toFixed(2).replace('.',','));}
    if(tab==='audit')setAudit((await api<{items:Audit[]}>('/admin/billing/audit')).items);
-    if(tab==='system')setSystem(await api<SystemInfo>('/admin/billing/system'));
+    if(tab==='system'){
+     const [status,ops]=await Promise.all([api<SystemInfo>('/admin/billing/system'),api<OperationsInfo>('/admin/billing/operations')]);
+     setSystem(status);setOperations(ops);
+    }
+    if(tab==='privacy')setPrivacyRequests((await api<{items:PrivacyRequestAdmin[]}>('/admin/billing/privacy-requests')).items);
     if(tab==='analytics')setAnalytics(await api<AdminAnalytics>(`/admin/billing/analytics?days=${analyticsDays}`));
   }catch(e){setError(e instanceof Error?e.message:'Não foi possível carregar os dados');}
   finally{setLoading(false);}
@@ -220,7 +230,34 @@ export default function AdminPage(){
      <button className="btn" disabled={saving}><Save size={16}/> Salvar configurações</button>
     </form>
    </Panel>}
+   {tab==='privacy'&&<Panel title="Solicitações de privacidade" subtitle="Não encerre uma solicitação de exclusão antes de realizar a análise e as providências necessárias">
+    {!privacyRequests.length?<p>Nenhum pedido recebido.</p>:<div className="stack">{privacyRequests.map(item=><div className="notice info" key={item.id}>
+      <p><strong>{item.type==='deletion'?'Exclusão de dados':'Correção de dados'}</strong> · {item.status==='open'?'Pendente':'Concluído'} · {date(item.createdAt)}</p>
+      <p>{item.user?.name||'Conta não localizada'} · {item.user?.email||'—'}</p>
+      {item.note&&<p>Pedido: {item.note}</p>}
+      {item.response&&<p>Resposta administrativa: {item.response}</p>}
+      {item.status==='open'&&<div className="stack-sm"><label>Providências realizadas (mínimo 10 caracteres)<textarea className="textarea" rows={2} maxLength={500} value={privacyResponse[item.id]||''} onChange={e=>setPrivacyResponse(v=>({...v,[item.id]:e.target.value}))}/></label>
+       <button className="btn secondary" disabled={saving||(privacyResponse[item.id]||'').trim().length<10} onClick={()=>void run(()=>api(`/admin/billing/privacy-requests/${item.id}`,{method:'PATCH',body:JSON.stringify({response:privacyResponse[item.id]})}),'Solicitação atualizada')}>Registrar atendimento</button>
+      </div>}
+     </div>)}</div>}
+     <p className="admin-small">O registro de atendimento não elimina dados automaticamente. Analise as obrigações de guarda e atenda o pedido pelo procedimento aprovado da empresa. As ações ficam auditadas.</p>
+    </Panel>}
    {tab==='system'&&system&&<>
+    {operations&&<>
+     <div className="admin-stat-grid">{[
+      {label:'Erros HTTP 5xx em 24h',value:String(operations.trackedErrors24h),Icon:Activity},
+      {label:'Respostas lentas em 24h',value:String(operations.trackedSlow24h),Icon:History},
+      {label:'Dispositivos com push',value:String(operations.pushActiveDevices),Icon:Users},
+      {label:'Notificações enviadas em 7 dias',value:String(operations.pushDelivered7d),Icon:CheckCircle2},
+      {label:'Falhas de push em 7 dias',value:String(operations.pushFailed7d),Icon:History}
+     ].map(({label,value,Icon})=><div className="admin-stat" key={label}><Icon size={18}/><small>{label}</small><strong>{value}</strong></div>)}</div>
+     <Panel title="Saúde operacional · últimos registros" subtitle="Somente erros e lentidão, sem dados pessoais dos motoboys">
+      <p>Web Push: <strong>{operations.pushConfigured?'Chaves configuradas':'Configuração pendente'}</strong> · O agendamento deve ser conferido no Heroku Scheduler.</p>
+      <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Horário</th><th>Evento</th><th>Rota</th><th>Status</th><th>Duração</th><th>ID de suporte</th></tr></thead><tbody>{operations.recent.map((v,i)=><tr key={i}><td>{date(v.at)}</td><td>{v.kind==='error'?'Erro':'Lento'}</td><td>{v.method} {v.route}</td><td>{v.status}</td><td>{v.durationMs} ms</td><td><code>{v.requestId.slice(0,8)}</code></td></tr>)}</tbody></table></div>
+      {!operations.recent.length&&<p className="field-hint">Nenhum evento de erro ou lentidão registrado nas últimas 24 horas.</p>}
+      {operations.notes.map((n,i)=><p className="admin-small" key={i}>{n}</p>)}
+     </Panel>
+    </>}
     <div className="admin-stat-grid">{[
      {label:'API',value:system.apiOnline?'Online':'Indisponível',Icon:Activity},
      {label:'Banco de dados',value:system.databaseConnected?'Conectado':'Sem conexão',Icon:ShieldCheck},
