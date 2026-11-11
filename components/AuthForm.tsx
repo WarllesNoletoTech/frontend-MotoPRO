@@ -14,7 +14,7 @@ export default function AuthForm({mode}:{mode:'login'|'register'}){
  useEffect(()=>{if(mode==='register'){const ref=new URLSearchParams(window.location.search).get('ref');if(ref)setReferralCode(ref.toUpperCase().slice(0,12));}},[mode]);
  const submit=async(e:React.FormEvent)=>{
   e.preventDefault();setError('');setBusy(true);
-  try{const result=await api<{user:{role:string}}>(mode==='login'?'/auth/login':'/auth/register',{method:'POST',body:JSON.stringify(mode==='login'?{email,password}:{firstName,lastName,email,phone,password,...(referralCode.trim()?{referralCode:referralCode.trim().toUpperCase()}:{})})});router.replace(result.user.role==='admin'?'/app/admin':'/app');router.refresh();}
+  try{const result=await api<{user:{role:string}}>(mode==='login'?'/auth/login':'/auth/register',{method:'POST',body:JSON.stringify(mode==='login'?{email,password}:{firstName,lastName,email,phone,password,...(referralCode.trim()?{referralCode:referralCode.trim().toUpperCase()}:{})})});try{sessionStorage.setItem('motopro:postlogin-setup',String(Date.now()));}catch{/* O login funciona mesmo sem sessionStorage. */}router.replace(result.user.role==='admin'?'/app/admin':'/app');router.refresh();}
   catch(err){setError(err instanceof Error?err.message:'Falha no acesso');}
   finally{setBusy(false);}
  };

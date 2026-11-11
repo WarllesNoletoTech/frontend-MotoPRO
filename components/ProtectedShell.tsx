@@ -5,6 +5,7 @@ import {usePathname,useRouter} from 'next/navigation';
 import {LayoutDashboard,ReceiptText,Mic2,Bike,Target,Plug,ShieldCheck,LogOut,Settings,Gift,ChevronRight,LoaderCircle,Menu,X,Wallet,CalendarClock,LockKeyhole,QrCode,FileBarChart2,ScanLine,GitCompareArrows,UsersRound,ChartNoAxesCombined,Bell,Repeat2,ChartColumnIncreasing,Plus,Grid2X2} from 'lucide-react';
 import MotoMark from '@/components/MotoMark';
 import {api} from '@/lib/api';
+import {unlinkOnLogout} from '@/lib/notificationConsent';
 import {readBillingStatus} from '@/lib/billingContract';
 import CompletePhone from '@/components/CompletePhone';
 import CompleteName from '@/components/CompleteName';
@@ -107,7 +108,7 @@ export default function ProtectedShell({children}:{children:React.ReactNode}){
  const gateDescription=gateExpired
   ?'Seu período pago terminou. Renove pelo Pix para voltar a utilizar todos os recursos, sem perder seus dados.'
   :'Para começar a utilizar todos os recursos do MotoPRO, ative sua assinatura semanal pelo Pix. Seus dados ficam preservados.';
- const logout=async()=>{await api('/auth/logout',{method:'POST'}).catch(()=>{});router.replace('/entrar');};
+ const logout=async()=>{if(user?.id)await unlinkOnLogout(user.id);await api('/auth/logout',{method:'POST'}).catch(()=>{});router.replace('/entrar');};
  if(checking)return <div className="loading-page"><LoaderCircle className="spin"/> Carregando seu MotoPRO...</div>;
  if(!user)return null;
  if(user.requiresNameCompletion)return <CompleteName user={user} onComplete={setUser} onLogout={logout}/>;
