@@ -4,6 +4,7 @@ import Link from 'next/link';
 import {ArrowUpRight,ArrowDownRight,Wallet,Plus,Mic,TrendingUp,Fuel,ReceiptText,Target,ArrowRight,RefreshCw,UsersRound,ChartNoAxesCombined,Trophy,Bell,Repeat2,ChartColumnIncreasing} from 'lucide-react';
 import {api,formatMoney,dateLabel,categoryLabel,type Dashboard,type Entry} from '@/lib/api';
 import {PageHeader,Panel,Loading,Notice,Empty} from '@/components/UI';
+import MotoMark from '@/components/MotoMark';
 export default function DashboardPage(){
  const [data,setData]=useState<Dashboard|null>(null),[entries,setEntries]=useState<Entry[]>([]),[error,setError]=useState('');
  const load=async()=>{setError('');try{await api('/integrations/rappidex/sync',{method:'POST',body:JSON.stringify({})});}catch{/* Integração opcional não bloqueia financeiro manual. */}try{const [d,l]=await Promise.all([api<Dashboard>('/dashboard'),api<{items:Entry[]}>('/entries?limit=5')]);setData(d);setEntries(l.items);}catch(e:any){setError(e.message);}};
@@ -12,6 +13,7 @@ export default function DashboardPage(){
  const goal=data?.goal?.weeklyTargetCents||0;
  const progress=goal?Math.min(100,Math.max(0,Math.round((data?.profitCents||0)/goal*100))):0;
  return <><PageHeader eyebrow="SEU PAINEL" title="Vamos fazer o corre render?" description="Tudo o que importa sobre o seu dinheiro, em um só lugar." actions={<button className="btn secondary" onClick={load}><RefreshCw size={16}/> Atualizar</button>}/>
+ <div className="dashboard-hero"><div className="dashboard-hero-copy"><span className="dashboard-hero-overline"><span/> PAINEL DE BORDO</span><h2>Seu corre, seus números.<br/><em>Seu próximo nível.</em></h2><p>Planeje sua rota financeira com clareza. Cada ganho conta.</p><div className="dashboard-hero-actions"><Link href="/app/lancamentos" className="btn"><Plus size={17}/> Registrar ganho</Link><Link href="/app/produtividade" className="btn outline">Ver produtividade <ArrowRight size={16}/></Link></div></div><div className="dashboard-hero-symbol"><div className="dashboard-hero-orbit"><MotoMark size={164}/></div><span>CONTROLE EM MOVIMENTO</span></div></div>
  {error&&<Notice kind="error">{error}</Notice>}
  {!data?<Loading/>:<>
   <div className="grid-cards">
@@ -47,6 +49,6 @@ export default function DashboardPage(){
    {!entries.length?<Empty message="Nenhum lançamento ainda. Registre sua primeira entrega!"/>:entries.map(entry=><div key={entry._id} className="activity-row"><span className="badge-icon">{entry.type==='income'?<TrendingUp size={19}/>:<ReceiptText size={19}/>}</span><div><strong>{entry.description||categoryLabel(entry.category)}</strong><small>{categoryLabel(entry.category)} · {dateLabel(entry.occurredOn)}</small></div><span className={`amount ${entry.type==='income'?'text-income':'text-expense'}`}>{entry.type==='income'?'+':'−'} {formatMoney(entry.amountCents)}</span></div>)}
   </Panel>
  </>}
- <div className="page-footer">MotoPRO 1.6.0 · Dados financeiros estimados com base nos lançamentos registrados.</div>
+ <div className="page-footer">MotoPRO 1.8.0 · Dados financeiros estimados com base nos lançamentos registrados.</div>
  </>;
 }

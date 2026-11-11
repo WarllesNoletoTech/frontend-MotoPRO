@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import {Bike,ArrowUpRight,ArrowRight,ChartNoAxesCombined,Mic2,Wallet,TimerReset,Target,ShieldCheck,CheckCircle2,Sparkles,Route,MoveUpRight,Zap} from 'lucide-react';
+import MotoMark from '@/components/MotoMark';
+import {ArrowUpRight,ArrowRight,ChartNoAxesCombined,Mic2,Wallet,TimerReset,Target,ShieldCheck,CheckCircle2,Sparkles,Route,MoveUpRight,Zap} from 'lucide-react';
 const benefits=[
  {Icon:Wallet,title:'Ganhos sob controle',text:'Registre os recebimentos, as despesas e enxergue seu lucro estimado.'},
  {Icon:Mic2,title:'Registre só falando',text:'Diga o valor do abastecimento ou das entregas e confirme o lançamento.'},
@@ -12,7 +13,7 @@ export default function Landing(){
  return <div className="landing">
   <div className="landing-glow landing-glow-one"/><div className="landing-glow landing-glow-two"/>
   <header className="landing-nav">
-   <Link href="/" className="brand"><span className="brand-mark"><Bike size={23}/></span><span><strong>Moto<span className="brand-highlight">PRO</span></strong><small>O controle é seu.</small></span></Link>
+   <Link href="/" className="brand"><span className="brand-mark"><MotoMark size={31}/></span><span><strong>Moto<span className="brand-highlight">PRO</span></strong><small>O controle é seu.</small></span></Link>
    <nav className="landing-nav-actions" aria-label="Acesso ao MotoPRO"><span className="landing-nav-note">FEITO PARA ENTREGADORES</span><Link className="btn landing-header-signup" href="/cadastro">Cadastre-se <ArrowRight size={16} aria-hidden="true"/></Link><Link className="btn landing-header-login" href="/entrar">Entrar <ArrowUpRight size={16} aria-hidden="true"/></Link></nav>
   </header>
   <main>
@@ -23,10 +24,10 @@ export default function Landing(){
      <div className="landing-actions"><Link href="/cadastro" className="btn hero-primary">Começar gratuitamente <ArrowRight size={18}/></Link><Link href="/entrar" className="btn outline">Já tenho conta</Link></div>
      <div className="landing-features"><span><CheckCircle2 size={16}/> Sem vincular outra plataforma</span><span><Mic2 size={16}/> Comandos por voz</span><span><ShieldCheck size={16}/> Seus dados protegidos</span></div>
     </div>
-    <div className="landing-demo-area" aria-label="Prévia ilustrativa do painel financeiro">
+    <div className="landing-demo-area" aria-label="Prévia ilustrativa do painel financeiro"><div className="landing-moto-watermark"><MotoMark size={290}/></div>
       <div className="demo-accent demo-accent-top"><Zap size={15}/> GESTÃO INTELIGENTE</div>
       <div className="landing-showcase">
-       <div className="showcase-head"><span className="showcase-brand"><span className="showcase-brand-icon"><Bike size={20}/></span> MotoPRO <span className="showcase-head-pill">VISÃO GERAL</span></span><span className="showcase-avatar">M</span></div>
+       <div className="showcase-head"><span className="showcase-brand"><span className="showcase-brand-icon"><MotoMark size={24}/></span> MotoPRO <span className="showcase-head-pill">VISÃO GERAL</span></span><span className="showcase-avatar">M</span></div>
        <div className="showcase-caption">LUCRO ESTIMADO DA SEMANA</div>
        <div className="showcase-money">R$ 642,50 <span className="showcase-trend"><MoveUpRight size={13}/> Seu progresso</span></div>
        <div className="showcase-divider"/>

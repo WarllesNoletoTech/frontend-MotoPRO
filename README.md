@@ -83,3 +83,8 @@ Consulte `LEIA_PRIMEIRO_FASE4.txt`, `ALTERACOES_FASE4.md` e `CHECKLIST_HOMOLOGAC
 ## MotoPRO 1.7.0 — Fase 5
 
 Ver `../LEIA_PRIMEIRO_FASE5.txt`, `../ALTERACOES_FASE5.md` e `../CHECKLIST_HOMOLOGACAO_FASE5.md`. A ativação de notificações Web Push exige chaves VAPID e agendador Heroku, e o fluxo de privacidade é de solicitação/atendimento manual, sem exclusão automática.
+
+
+## Identidade Premium MotoPRO v1.8.0
+
+Interface escura em preto grafite + laranja, navegação agrupada, design responsivo e nova marca de motocicleta. Veja `../ALTERACOES_VISUAIS.md` no pacote completo. O backend v1.7.0 permanece compatível e inalterado.

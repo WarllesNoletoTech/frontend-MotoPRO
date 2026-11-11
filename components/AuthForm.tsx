@@ -2,7 +2,8 @@
 import {useEffect,useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/navigation';
-import {Bike,LoaderCircle} from 'lucide-react';
+import {LoaderCircle,ShieldCheck,ChartNoAxesCombined,Route} from 'lucide-react';
+import MotoMark from './MotoMark';
 import {api} from '@/lib/api';
 import {Notice} from './UI';
 export default function AuthForm({mode}:{mode:'login'|'register'}){
@@ -17,7 +18,7 @@ export default function AuthForm({mode}:{mode:'login'|'register'}){
   catch(err){setError(err instanceof Error?err.message:'Falha no acesso');}
   finally{setBusy(false);}
  };
- return <div className="auth-page"><section className="auth-card"><Link href="/" className="brand"><span className="brand-mark"><Bike/></span><span><strong>Moto<span className="brand-highlight">PRO</span></strong><small>O controle é seu.</small></span></Link>
+ return <div className="auth-page"><div className="auth-layout"><aside className="auth-promo" aria-label="Sobre o MotoPRO"><Link href="/" className="auth-promo-brand"><span className="brand-mark"><MotoMark size={40}/></span><span>Moto<strong>PRO</strong></span></Link><div className="auth-promo-body"><span className="auth-promo-kicker">FEITO PRA QUEM FAZ ACONTECER</span><h2>Mais controle.<br/><span>Mais estrada.</span></h2><p>Seu dia rende mais quando seus ganhos, despesas e sua moto estão sob controle.</p><div className="auth-promo-features"><span><ChartNoAxesCombined size={19}/> Ganhos organizados</span><span><Route size={19}/> Sua rotina em um só lugar</span><span><ShieldCheck size={19}/> Controle dos seus dados</span></div></div><div className="auth-promo-art"><MotoMark size={280}/></div><span className="auth-promo-footer">MOTOPRO · O CONTROLE É SEU</span></aside><section className="auth-card"><Link href="/" className="brand"><span className="brand-mark"><MotoMark size={32}/></span><span><strong>Moto<span className="brand-highlight">PRO</span></strong><small>O controle é seu.</small></span></Link>
   <h1>{mode==='login'?'Bem-vindo de volta':'Comece a cuidar dos seus ganhos'}</h1><p>{mode==='login'?'Entre para acompanhar seu financeiro.':'Crie sua conta e comece a organizar suas entregas.'}</p>
   <form onSubmit={submit}>
    {mode==='register'&&<div className="field"><label htmlFor="first-name">Nome</label><input id="first-name" className="input" required minLength={2} maxLength={90} autoComplete="given-name" value={firstName} onChange={e=>setFirstName(e.target.value)} placeholder="Ex.: João"/></div>}
@@ -29,5 +30,5 @@ export default function AuthForm({mode}:{mode:'login'|'register'}){
    {error&&<Notice kind="error">{error}</Notice>}
    <button className="btn wide" disabled={busy}>{busy?<><LoaderCircle size={17} className="spin"/> Aguarde...</>:mode==='login'?'Entrar no MotoPRO':'Criar conta'}</button>
   </form><div className="auth-footer">{mode==='login'?<>Ainda não tem conta? <Link href="/cadastro">Cadastre-se</Link></>:<>Já tem conta? <Link href="/entrar">Entrar</Link></>}</div>
- </section></div>;
+ </section></div></div>;
 }

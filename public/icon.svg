@@ -1,1 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" rx="42" fill="#090d0e"/><circle cx="56" cy="139" r="24" fill="none" stroke="#ecb65f" stroke-width="9"/><circle cx="143" cy="139" r="24" fill="none" stroke="#ecb65f" stroke-width="9"/><path d="M45 139 76 92h37l29 47H99l-21-47m28-23h25" fill="none" stroke="#fafbf7" stroke-linecap="round" stroke-linejoin="round" stroke-width="10"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#1e2430"/><stop offset="1" stop-color="#080a0e"/></linearGradient>
+    <linearGradient id="signal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffc091"/><stop offset=".48" stop-color="#ff834b"/><stop offset="1" stop-color="#f55630"/></linearGradient>
+    <radialGradient id="haze"><stop stop-color="#f86f38" stop-opacity=".18"/><stop offset="1" stop-color="#f86f38" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="106" fill="url(#bg)"/>
+  <circle cx="386" cy="95" r="220" fill="url(#haze)"/>
+  <rect x="14" y="14" width="484" height="484" rx="95" fill="none" stroke="#ff9a5a" stroke-opacity=".18" stroke-width="8"/>
+  <g stroke="url(#signal)" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="23">
+    <circle cx="113" cy="327" r="60"/>
+    <circle cx="397" cy="327" r="60"/>
+    <path d="M113 327h83l49-100 75 5 77 95M196 327h72l59-66M264 258l-34 69M317 232l29-44h44M354 188h45M187 224h76M201 198h44M141 250l36 16 36-49"/>
+    <path d="M280 209l25-30h61l-11 25M145 327h-18M294 305h53"/>
+  </g>
+</svg>

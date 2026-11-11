@@ -1,5 +1,5 @@
-/* MotoPRO 1.7: somente recursos públicos. NUNCA guardar /api, HTML privado ou cookies. */
-const CACHE_NAME='motopro-public-v1.7.0';
+/* MotoPRO 1.8: somente recursos públicos. NUNCA guardar /api, HTML privado ou cookies. */
+const CACHE_NAME='motopro-public-v1.8.0';
 const SAFE_FILES=['/offline.html','/icon.svg'];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(SAFE_FILES)).then(()=>self.skipWaiting()));
