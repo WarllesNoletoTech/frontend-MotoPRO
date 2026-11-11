@@ -8,7 +8,7 @@ import {PageHeader, Panel, Notice} from '@/components/UI';
 type InterpretationMeta = {engine?: 'ai' | 'basic'; advisory?: string};
 type Parsed = InterpretationMeta & (
   | {kind: 'entry'; type: 'income' | 'expense'; category: string; amountCents: number; description: string}
-  | {kind: 'summary'; period: 'week' | 'today'; summary: {incomeCents: number; expenseCents: number; profitCents: number}; periodRange?: {from: string; to: string}}
+  | {kind: 'summary'; period: 'week' | 'today' | 'month'; goal?: {targetCents: number; remainingCents: number; daysRemaining: number; requiredDailyCents: number} | null; summary: {incomeCents: number; expenseCents: number; profitCents: number}; periodRange?: {from: string; to: string}}
   | {kind: 'unknown'; message: string}
 );
 
@@ -410,10 +410,15 @@ export default function AssistantPage() {
             </div>
           </div>}
           {pending?.kind === 'summary' && <div className="stack-sm">
-            <div className="assistant-reply"><Volume2 size={17}/> Aqui está seu resumo de {pending.period === 'today' ? 'hoje' : 'terça a segunda'}.</div>
+            <div className="assistant-reply"><Volume2 size={17}/> Aqui está seu resumo de {pending.period === 'today' ? 'hoje' : pending.period === 'month' ? 'mês atual' : 'terça a segunda'}.</div>
             <div className="row-between"><span>Receitas</span><strong className="text-income">{formatMoney(pending.summary.incomeCents)}</strong></div>
             <div className="row-between"><span>Despesas</span><strong className="text-expense">{formatMoney(pending.summary.expenseCents)}</strong></div>
             <div className="row-between"><span>Lucro estimado</span><strong style={{font: '700 22px Outfit'}}>{formatMoney(pending.summary.profitCents)}</strong></div>
+            {pending.goal && <div className="stack-sm"><div className="row-between"><span>Meta definida</span><strong>{formatMoney(pending.goal.targetCents)}</strong></div>
+             <div className="row-between"><span>Falta para a meta</span><strong>{formatMoney(pending.goal.remainingCents)}</strong></div>
+             <div className="row-between"><span>Média por dia restante</span><strong>{formatMoney(pending.goal.requiredDailyCents)}</strong></div>
+             <small>Distribuição por {pending.goal.daysRemaining} dia(s) de calendário restantes, incluindo hoje.</small>
+            </div>}
           </div>}
           {pending?.kind === 'unknown' && <Notice>{pending.message}</Notice>}
           {!pending && !error && !success && <div className="empty">
