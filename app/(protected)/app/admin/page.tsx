@@ -1,11 +1,12 @@
 'use client';
 import {useEffect,useState,useCallback} from 'react';
-import {Users,Wallet,ShieldCheck,Gift,Settings2,History,RefreshCcw,Search,Ban,CheckCircle2,Plus,CalendarClock,Save,Activity,Eye,ClipboardList,BarChart3,FileDown,Printer} from 'lucide-react';
+import {Users,Wallet,ShieldCheck,Gift,Settings2,History,RefreshCcw,Search,Ban,CheckCircle2,Plus,CalendarClock,Save,Activity,Eye,ClipboardList,BarChart3,FileDown,Printer,BellRing} from 'lucide-react';
 import {PageHeader,Panel,Loading,Notice,Empty} from '@/components/UI';
 import {api,formatMoney} from '@/lib/api';
 import {BillingStatusBadge} from '@/components/BillingStatusBadge';
+import AdminNotificationsPanel from '@/components/AdminNotificationsPanel';
 
-type Tab='overview'|'users'|'subscriptions'|'payments'|'referrals'|'campaigns'|'settings'|'audit'|'system'|'analytics'|'privacy';
+type Tab='overview'|'users'|'subscriptions'|'payments'|'referrals'|'campaigns'|'settings'|'audit'|'system'|'analytics'|'privacy'|'notifications';
 type Overview={active24h:number;new7d:number;entries7d:number;trialDays:number;premiumRequired:boolean;users:number;blockedUsers:number;activeSubscribers:number;expiringSubscribers:number;expiredSubscribers:number;activeCourtesy:number;receivedCents:number;approvedPayments:number;weeklyPriceCents:number;billingEnabled:boolean;monthlyCampaign:{status:string;message:string}};
 type User={id:string;name:string;email:string;phone:string|null;blocked:boolean;blockReason:string;role:string;createdAt:string;lastLoginAt:string|null;lastActivityAt:string|null;trialEndsAt:string|null;subscription?:{status:string;method:string;activeUntil?:string}|null;courtesyUntil?:string|null};
 type Subscription={id:string;userId:string;name:string;email:string;method:string;status:string;activeUntil:string|null;cancelAtPeriodEnd:boolean;priceCents:number};
@@ -35,7 +36,7 @@ const tabs:{id:Tab;label:string;Icon:typeof Users}[]=[
  {id:'campaigns',label:'Campanhas',Icon:Gift},{id:'settings',label:'Configurações',Icon:Settings2},
  {id:'audit',label:'Auditoria',Icon:History},{id:'system',label:'Sistema',Icon:Activity},
  {id:'analytics',label:'Indicadores',Icon:BarChart3},
- {id:'privacy',label:'Privacidade',Icon:ShieldCheck}
+ {id:'privacy',label:'Privacidade',Icon:ShieldCheck},{id:'notifications',label:'Notificações',Icon:BellRing}
 ];
 const whatsappHref=(phone:string|null)=>{const d=(phone||'').replace(/\D/g,'');return /^55[1-9]{2}9\d{8}$/.test(d)?`https://wa.me/${d}`:null;};
 const date=(v?:string|null)=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
@@ -144,6 +145,7 @@ export default function AdminPage(){
   {error&&<Notice kind="error">{error}</Notice>}
   {success&&<Notice kind="success">{success}</Notice>}
   {loading?<Loading/>:<>
+   {tab==='notifications'&&<AdminNotificationsPanel/>}
    {tab==='overview'&&overview&&<>
     <div className="admin-stat-grid">{[
       {label:'Motoboys cadastrados',value:String(overview.users),Icon:Users},
