@@ -153,13 +153,20 @@ export default function AdminPage(){
       <Pager page={userPage} total={users?.total??0} pageSize={15} onChange={setUserPage}/>
     </Panel>
    </>}
-   {tab==='subscriptions'&&<Panel title="Assinaturas" subtitle="Vencimento, método e estado confirmado no banco">
+   {tab==='subscriptions'&&<><Panel title="Assinaturas pagas" subtitle="Vencimento, método e estado confirmado no banco">
      <div className="admin-toolbar"><select className="select" aria-label="Filtrar assinaturas" value={subStatus} onChange={e=>{setSubStatus(e.target.value);setSubPage(1);}}><option value="all">Todos os status</option><option value="active">Ativas</option><option value="expiring">Vencem em 48h</option><option value="pending">Pendentes</option><option value="expired">Vencidas</option><option value="canceled">Canceladas</option></select></div>
      <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Assinante</th><th>Pagamento</th><th>Status</th><th>Valor contratado</th><th>Acesso até</th></tr></thead><tbody>{subscriptions?.items.map(s=><tr key={s.id}><td><strong>{s.name}</strong><small>{s.email}</small></td><td>{s.method==='credit'?'Crédito':'Pix'}</td><td><BillingStatusBadge status={s.status}/>{s.cancelAtPeriodEnd&&<small>Renovação cancelada</small>}</td><td>{formatMoney(s.priceCents)}</td><td>{date(s.activeUntil)}</td></tr>)}</tbody></table></div>
      {!subscriptions?.items.length&&<Empty message="Nenhuma assinatura encontrada"/>}
      <Pager page={subPage} total={subscriptions?.total??0} pageSize={15} onChange={setSubPage}/>
-     <p className="admin-small">O painel não altera o status de pagamentos no Mercado Pago. Cancelamentos e reembolsos reais são tratados no provedor.</p>
-    </Panel>}
+     <p className="admin-small">Somente cobranças reais são contabilizadas como receita.</p>
+    </Panel>
+    <Panel title="Cortesias nas assinaturas" subtitle="Acessos concedidos administrativamente, sem cobranças fictícias">
+     <div className="admin-toolbar"><select className="select" aria-label="Filtrar cortesias" value={courtesyStatus} onChange={e=>{setCourtesyStatus(e.target.value);setCourtesyPage(1);}}><option value="all">Todas</option><option value="active">Vigentes</option><option value="expired">Encerradas</option></select></div>
+     <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Motoboy</th><th>Concessão</th><th>Expira em</th><th>Estado</th><th>Motivo</th></tr></thead><tbody>{courtesies?.items.map(c=><tr key={c.id}><td><strong>{c.name}</strong><small>{c.email}</small></td><td>{date(c.grantedAt)}</td><td>{date(c.activeUntil)}</td><td><span className={`admin-status ${c.status==='active'?'good':'bad'}`}>{c.status==='active'?'Vigente':'Encerrada'}</span></td><td>{c.reason}</td></tr>)}</tbody></table></div>
+     {!courtesies?.items.length&&<Empty message="Nenhuma cortesia encontrada"/>}
+     <Pager page={courtesyPage} total={courtesies?.total??0} pageSize={15} onChange={setCourtesyPage}/>
+     <p className="admin-small">Para conceder ou prorrogar, abra a aba Motoboys.</p>
+    </Panel></>}
    {tab==='payments'&&<Panel title="Financeiro administrativo" subtitle="Somente pagamentos registrados e conciliados no MotoPRO">
      <div className="admin-toolbar"><select className="select" aria-label="Meio" value={payMethod} onChange={e=>{setPayMethod(e.target.value);setPayPage(1);}}><option value="all">Todos os meios (inclui histórico)</option><option value="pix">Pix</option><option value="credit">Crédito</option></select><select className="select" value={payStatus} aria-label="Status" onChange={e=>{setPayStatus(e.target.value);setPayPage(1);}}><option value="all">Todos os status</option><option value="approved">Aprovados</option><option value="pending">Pendentes</option><option value="rejected">Recusados</option><option value="refunded">Estornados</option><option value="canceled">Cancelados</option></select><label className="admin-date-label">De<input type="date" className="input" value={payFrom} onChange={e=>{setPayFrom(e.target.value);setPayPage(1);}}/></label><label className="admin-date-label">Até<input type="date" className="input" value={payTo} onChange={e=>{setPayTo(e.target.value);setPayPage(1);}}/></label></div>
      <div className="admin-result"><strong>{formatMoney(payments?.approvedCents??0)}</strong><span>{payments?.approvedCount??0} pagamentos aprovados no período/filtros</span></div>
@@ -209,6 +216,29 @@ export default function AdminPage(){
      <button className="btn" disabled={saving}><Save size={16}/> Salvar configurações</button>
     </form>
    </Panel>}
+   {tab==='system'&&system&&<>
+    <div className="admin-stat-grid">{[
+     {label:'API',value:system.apiOnline?'Online':'Indisponível',Icon:Activity},
+     {label:'Banco de dados',value:system.databaseConnected?'Conectado':'Sem conexão',Icon:ShieldCheck},
+     {label:'Ativos em 24h',value:String(system.active24h),Icon:Users},
+     {label:'Ativos em 7 dias',value:String(system.active7d),Icon:Activity},
+     {label:'Cadastros em 7 dias',value:String(system.registered7d),Icon:Plus},
+     {label:'Lançamentos em 7 dias',value:String(system.entries7d),Icon:ClipboardList},
+     {label:'Receita aprovada em 7 dias',value:formatMoney(system.approvedCents7d),Icon:Wallet},
+     {label:'Pagamentos aprovados em 7 dias',value:String(system.approvedPayments7d),Icon:CheckCircle2}
+    ].map(({label,value,Icon})=><div className="admin-stat" key={label}><Icon size={18}/><small>{label}</small><strong>{value}</strong></div>)}</div>
+    <div className="two-col">
+     <Panel title="Operação" subtitle={`Conferido em ${date(system.checkedAt)}`}>
+      <p>Motoboys cadastrados: <strong>{system.registeredTotal}</strong></p>
+      <p>Lançamentos registrados: <strong>{system.entriesTotal}</strong></p>
+      <p>Uptime deste processo da API: <strong>{Math.floor(system.uptimeSeconds/3600)}h {Math.floor((system.uptimeSeconds%3600)/60)}min</strong></p>
+      <p className="admin-small">{system.note}</p>
+     </Panel>
+     <Panel title="Cadastros recentes">
+      <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Nome</th><th>Cadastro</th><th>Última atividade</th></tr></thead><tbody>{system.recentUsers.map(u=><tr key={u.id}><td>{u.name}</td><td>{date(u.createdAt)}</td><td>{date(u.lastActivityAt)}</td></tr>)}</tbody></table></div>
+     </Panel>
+    </div>
+   </>}
    {tab==='audit'&&<Panel title="Histórico de ações administrativas" subtitle="Mudanças de bloqueio, cortesias, campanhas e configurações">
     <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Quando</th><th>Ação</th><th>Informações</th></tr></thead><tbody>{audit.map(x=><tr key={x._id}><td>{date(x.createdAt)}</td><td><code>{x.action}</code></td><td><small>{Object.entries(x.metadata||{}).map(([k,v])=>`${k}: ${String(v)}`).join(' · ').slice(0,180)||'—'}</small></td></tr>)}</tbody></table></div>
     {!audit.length&&<Empty message="Nenhuma ação administrativa registrada"/>}
