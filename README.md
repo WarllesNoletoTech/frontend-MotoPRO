@@ -47,16 +47,12 @@ para preservar os cookies de sessão. O aviso de Node.js 24 no build é
 informativo e não causou o erro acima.
 
 
-## Fechamento semanal automático — Fase 1
+## Relatórios semanais manuais — MotoPRO 1.8.2
 
-A página **Relatórios** permite ao motoboy autorizar o envio semanal por e-mail,
-com confirmação do endereço pelo link recebido. Ele pode cancelar a qualquer
-momento, mesmo sem assinatura ativa. O envio **não é habilitado por padrão**.
-
-A API exige `RESEND_API_KEY` e `REPORTS_FROM_EMAIL` reais no Heroku e o processo
-agendado `npm run reports:weekly`. A Vercel não executa esse agendamento;
-a inclusão do código não configura automaticamente a entrega de e-mails.
-O painel Admin → Sistema mostra quantidade de e-mails habilitados, enviados e falhos.
+O motoboy consulta o fechamento semanal no aplicativo, exporta CSV e compartilha
+voluntariamente o resumo pelo WhatsApp. **Não há envio automático por e-mail**,
+confirmação de endereço para relatórios, nem tarefa agendada para esse serviço.
+O e-mail da conta permanece para identificação e funcionalidades de autenticação.
 
 ## Fase 2 — MotoPRO v1.4.0
 

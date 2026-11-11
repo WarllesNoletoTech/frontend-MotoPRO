@@ -13,8 +13,6 @@ const consentKey=(id:string)=>`motopro-onesignal-enabled:${id}`;
 
 interface OneSignalSDK {
  init(options:{appId:string;serviceWorkerPath:string;serviceWorkerParam:{scope:string};notifyButton:{enable:boolean}}):Promise<void>;
- login(externalId:string):Promise<void>;
- logout():Promise<void>;
  Notifications:{requestPermission():Promise<void>;permission:boolean;permissionNative:string};
  User:{PushSubscription:{id:string|null;optedIn:boolean;optIn():Promise<void>;optOut():Promise<void>}};
 }
@@ -39,7 +37,7 @@ function loadOneSignal(appId:string):Promise<OneSignalSDK>{
    script.dataset.motoproOnesignal='true';
    script.src='https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
    script.async=true;
-   script.onerror=()=>reject(new Error('Não foi possível conectar ao OneSignal. Confira a conexão.'));
+   script.onerror=()=>{script.remove();reject(new Error('Não foi possível conectar ao OneSignal. Confira a conexão.'));};
    document.head.appendChild(script);
   }
  }).catch(error=>{osLoader=null;osAppId=null;throw error;});
@@ -66,7 +64,9 @@ export function canRequestPush(config:PushConfig|null){
  return Boolean(config?.supported&&canPush()&&Notification.permission!=='denied'&&(!isIosDevice()||isStandalone()));
 }
 export async function readPushConfig(){
- return api<PushConfig>('/notifications/config');
+ // Compatibilidade durante deploy: o backend 1.7.0 ainda não devolve provider.
+ const config=await api<PushConfig>('/notifications/config');
+ return {...config,provider:config.provider|| (config.publicKey?'vapid':'none'),oneSignalAppId:config.oneSignalAppId||null};
 }
 async function oldSubscription(){
  // /sw.js controla o PWA: o worker OneSignal fica isolado em /push/onesignal/.
@@ -79,7 +79,6 @@ export async function isDeviceSubscribed(config:PushConfig,userId:string){
   try{
    if(localStorage.getItem(consentKey(userId))!=='true'||!config.oneSignalAppId)return false;
    const sdk=await loadOneSignal(config.oneSignalAppId);
-   await sdk.login(userId);
    return sdk.User.PushSubscription.optedIn===true&&Boolean(sdk.User.PushSubscription.id);
   }catch{return false;}
  }
@@ -102,7 +101,6 @@ export async function enableNotifications(config:PushConfig,userId:string){
  if(config.provider==='onesignal'){
   if(!config.oneSignalAppId)throw new Error('OneSignal não configurado no servidor.');
   const sdk=await loadOneSignal(config.oneSignalAppId);
-  await sdk.login(userId);
   if(!sdk.User.PushSubscription.optedIn)await sdk.User.PushSubscription.optIn();
   const subscriptionId=await waitForOneSignalSubscription(sdk);
   await api('/notifications/onesignal/subscribe',{method:'POST',body:JSON.stringify({subscriptionId})});
@@ -142,7 +140,6 @@ export async function unlinkOnLogout(userId:string){
   const subscriptionId=sdk.User.PushSubscription.id;
   await sdk.User.PushSubscription.optOut();
   if(subscriptionId)await api('/notifications/onesignal/unsubscribe',{method:'POST',body:JSON.stringify({subscriptionId})});
-  await sdk.logout();
   localStorage.removeItem(consentKey(userId));
  }catch{/* Falha externa não deve impedir sair da conta. */}
 }

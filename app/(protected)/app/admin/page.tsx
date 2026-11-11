@@ -27,7 +27,7 @@ type Insights={user:{id:string;name:string;email:string;phone:string|null;create
 type AdminAnalytics={periodDays:number;generatedAt:string;users:number;activeDrivers:number;newDrivers:number;previousCohort:number;retainedDrivers:number;retentionPercent:number|null;payingSubscribers:number;activeCourtesy:number;cancelAtPeriodEnd:number;activeSubscriptionRatio:number;approvedPayments:number;approvedRevenueCents:number;monthlyProjectionCents:number;privateDeliveries:number;privateCustomers:number;earnings:{type:string;source:string;provider:string;platform:string;count:number;amountCents:number}[];ai:{calls:number;estimatedUsd:number|null};notes:string[]};
 type PrivacyRequestAdmin={id:string;user:{name:string;email:string}|null;type:'deletion'|'correction';note:string;status:'open'|'resolved';response:string;createdAt:string;resolvedAt:string|null};
 type OperationsInfo={checkedAt:string;trackedErrors24h:number;trackedSlow24h:number;pushConfigured:boolean;pushActiveDevices:number;pushDelivered7d:number;pushFailed7d:number;recent:{kind:string;status:number;method:string;route:string;durationMs:number;requestId:string;at:string}[];notes:string[]};
-type SystemInfo={automation?:{last30d:number;confirmedReceipts:number;activeMaintenancePlans:number;activeRecurrences:number;recurringEntries7d:number;last7d:{feature:string;outcome:string;count:number;inputTokens:number;outputTokens:number;estimatedUsd:number|null}[]};weeklyEmailConfigured:boolean;weeklyEmailSubscribers:number;weeklyEmailSent7d:number;weeklyEmailFailed7d:number;checkedAt:string;apiOnline:boolean;databaseConnected:boolean;uptimeSeconds:number;registeredTotal:number;registered7d:number;active24h:number;active7d:number;entries7d:number;entriesTotal:number;approvedPayments7d:number;approvedCents7d:number;note:string;recentUsers:{id:string;name:string;createdAt:string;lastActivityAt:string|null}[]};
+type SystemInfo={automation?:{last30d:number;confirmedReceipts:number;activeMaintenancePlans:number;activeRecurrences:number;recurringEntries7d:number;last7d:{feature:string;outcome:string;count:number;inputTokens:number;outputTokens:number;estimatedUsd:number|null}[]};checkedAt:string;apiOnline:boolean;databaseConnected:boolean;uptimeSeconds:number;registeredTotal:number;registered7d:number;active24h:number;active7d:number;entries7d:number;entriesTotal:number;approvedPayments7d:number;approvedCents7d:number;note:string;recentUsers:{id:string;name:string;createdAt:string;lastActivityAt:string|null}[]};
 const tabs:{id:Tab;label:string;Icon:typeof Users}[]=[
  {id:'overview',label:'Visão geral',Icon:Wallet},{id:'users',label:'Motoboys',Icon:Users},
  {id:'subscriptions',label:'Assinaturas',Icon:ShieldCheck},{id:'payments',label:'Financeiro',Icon:Wallet},
@@ -267,9 +267,6 @@ export default function AdminPage(){
      {label:'Lançamentos em 7 dias',value:String(system.entries7d),Icon:ClipboardList},
      {label:'Receita aprovada em 7 dias',value:formatMoney(system.approvedCents7d),Icon:Wallet},
      {label:'Pagamentos aprovados em 7 dias',value:String(system.approvedPayments7d),Icon:CheckCircle2},
-     {label:'E-mails semanais ativados',value:String(system.weeklyEmailSubscribers),Icon:Activity},
-     {label:'Relatórios enviados em 7 dias',value:String(system.weeklyEmailSent7d),Icon:CheckCircle2},
-     {label:'Falhas de envio em 7 dias',value:String(system.weeklyEmailFailed7d),Icon:History},
      {label:'Chamadas de IA em 30 dias',value:String(system.automation?.last30d??0),Icon:Activity},
      {label:'Comprovantes confirmados',value:String(system.automation?.confirmedReceipts??0),Icon:ClipboardList},
      {label:'Planos de manutenção ativos',value:String(system.automation?.activeMaintenancePlans??0),Icon:Activity},
@@ -284,7 +281,6 @@ export default function AdminPage(){
     <div className="two-col">
      <Panel title="Operação" subtitle={`Conferido em ${date(system.checkedAt)}`}>
       <p>Motoboys cadastrados: <strong>{system.registeredTotal}</strong></p>
-      <p>Provedor de e-mail: <strong>{system.weeklyEmailConfigured?'Configurado':'Não configurado'}</strong> · Agendador: verificar Heroku Scheduler</p>
       <p>Lançamentos registrados: <strong>{system.entriesTotal}</strong></p>
       <p>Uptime deste processo da API: <strong>{Math.floor(system.uptimeSeconds/3600)}h {Math.floor((system.uptimeSeconds%3600)/60)}min</strong></p>
       <p className="admin-small">{system.note}</p>
