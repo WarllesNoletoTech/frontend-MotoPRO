@@ -14,6 +14,7 @@ const navigation=[
  {href:'/app/assistente',label:'Assistente',Icon:Mic2},
  {href:'/app/moto',label:'Minha moto',Icon:Bike},
  {href:'/app/metas',label:'Metas',Icon:Target},
+ {href:'/app/relatorios',label:'Relatórios',Icon:FileBarChart2},
  {href:'/app/integracoes',label:'Integrações',Icon:Plug},
  {href:'/app/assinatura',label:'Assinatura',Icon:ShieldCheck},
  {href:'/app/premiacoes',label:'Benefícios',Icon:Gift},

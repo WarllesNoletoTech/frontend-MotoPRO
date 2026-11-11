@@ -1,6 +1,6 @@
 'use client';
 import {useEffect,useState} from 'react';
-import {ClipboardCopy,FileDown,RefreshCw,Share2} from 'lucide-react';
+import {ClipboardCopy,FileDown,RefreshCw,Share2,Mail,MailCheck,MailX} from 'lucide-react';
 import {api,formatMoney,dateLabel,categoryLabel} from '@/lib/api';
 import {PageHeader,Panel,Notice,Loading,Empty} from '@/components/UI';
 
@@ -8,6 +8,8 @@ type Report={period:{from:string;to:string};generatedAt:string;incomeCents:numbe
  previousProfitCents:number;profitChangeCents:number;entriesCount:number;integratedCount:number;
  categories:{type:string;category:string;totalCents:number;count:number}[];
  byDay:{day:string;incomeCents:number;expenseCents:number}[];message:string};
+type ReportEmailSettings={email:string;enabled:boolean;pendingVerification:boolean;configured:boolean};
+type ReportDelivery={period:{from:string;to:string};status:'pending'|'sending'|'sent'|'failed';sentAt:string|null;attempts:number};
 const label=(r:Report)=>`${dateLabel(r.period.from)} a ${dateLabel(r.period.to)}`;
 const reportText=(r:Report)=>[
  `MotoPRO — Fechamento semanal (${label(r)})`,
@@ -22,6 +24,42 @@ const reportText=(r:Report)=>[
 export default function ReportsPage(){
  const [weeksAgo,setWeeksAgo]=useState(1),[report,setReport]=useState<Report|null>(null);
  const [loading,setLoading]=useState(true),[error,setError]=useState(''),[message,setMessage]=useState('');
+ const [mailSettings,setMailSettings]=useState<ReportEmailSettings|null>(null);
+ const [deliveries,setDeliveries]=useState<ReportDelivery[]>([]);
+ const [mailBusy,setMailBusy]=useState(false);
+ const refreshMail=()=>Promise.all([
+  api<ReportEmailSettings>('/account/report-email').then(setMailSettings),
+  api<{items:ReportDelivery[]}>('/reports/deliveries').then(r=>setDeliveries(r.items))
+ ]);
+ useEffect(()=>{
+  let active=true;
+  const token=new URLSearchParams(window.location.search).get('confirmarRelatorio');
+  const load=async()=>{
+   if(token){
+    try{
+     await api('/account/report-email/confirm',{method:'POST',body:JSON.stringify({token})});
+     if(active)setMessage('E-mail confirmado! Você receberá automaticamente o fechamento semanal.');
+    }catch(e){if(active)setError(e instanceof Error?e.message:'Não foi possível confirmar o e-mail.');}
+    finally{window.history.replaceState(null,'',window.location.pathname);}
+   }
+   await refreshMail().catch(e=>{if(active)setError(e instanceof Error?e.message:'Não foi possível consultar o envio automático.');});
+  };
+  void load();return()=>{active=false;};
+ },[]);
+ const updateMail=async(action:'request'|'disable')=>{
+  setMailBusy(true);setError('');setMessage('');
+  try{
+   if(action==='request'){
+    await api('/account/report-email/request',{method:'POST'});
+    setMessage('Enviamos um link de confirmação para seu e-mail. Confira a caixa de entrada e o spam.');
+   }else{
+    await api('/account/report-email',{method:'DELETE'});
+    setMessage('O envio automático dos relatórios foi desativado.');
+   }
+   await refreshMail();
+  }catch(e){setError(e instanceof Error?e.message:'Não foi possível atualizar a preferência.');}
+  finally{setMailBusy(false);}
+ };
  useEffect(()=>{
   let active=true;setLoading(true);setError('');
   api<Report>(`/reports/weekly?weeksAgo=${weeksAgo}`).then(r=>{if(active)setReport(r);})
@@ -51,6 +89,21 @@ export default function ReportsPage(){
     <button className="btn secondary" onClick={()=>setWeeksAgo(v=>v===0?1:0)}><RefreshCw size={16}/> Alternar atual/anterior</button>
    </div>
   </Panel>
+  <Panel title="Receber fechamento semanal por e-mail" subtitle="Opcional · privacidade e confirmação do endereço">
+   {!mailSettings?<Loading/>:<div className="stack">
+    <p>O relatório da última semana encerrada (terça a segunda) pode ser enviado automaticamente para <strong>{mailSettings.email}</strong>. Ative somente se você usa esse e-mail.</p>
+    {mailSettings.enabled?<>
+      <Notice kind="success"><MailCheck size={17}/> E-mail confirmado. O envio semanal está ativado.</Notice>
+      <button className="btn secondary" disabled={mailBusy} onClick={()=>void updateMail('disable')}><MailX size={17}/> {mailBusy?'Salvando...':'Desativar envio automático'}</button>
+    </>:<>
+      {mailSettings.pendingVerification&&<Notice>Confirmação pendente. Abra o link que enviamos para seu e-mail. Ele vale por 24 horas.</Notice>}
+      {!mailSettings.configured&&<Notice kind="error">Envio automático indisponível: falta configurar o provedor de e-mails no servidor. Os relatórios manuais continuam funcionando.</Notice>}
+      <button className="btn secondary" disabled={mailBusy||!mailSettings.configured} onClick={()=>void updateMail('request')}><Mail size={17}/> {mailBusy?'Enviando...':mailSettings.pendingVerification?'Reenviar confirmação':'Ativar envio por e-mail'}</button>
+    </>}
+    <p className="tiny-note">Somente você controla essa preferência. Os números financeiros não são enviados sem confirmar o endereço. O agendamento é operado pelo servidor.</p>
+    {!!deliveries.length&&<div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Semana</th><th>Envio</th><th>Data</th></tr></thead><tbody>{deliveries.map((item,i)=><tr key={i}><td>{dateLabel(item.period.from)} a {dateLabel(item.period.to)}</td><td>{item.status==='sent'?'Enviado':item.status==='failed'?'Falhou':item.status==='sending'?'Processando':'Pendente'}</td><td>{item.sentAt?new Date(item.sentAt).toLocaleString('pt-BR'):'—'}</td></tr>)}</tbody></table></div>}
+   </div>}
+  </Panel>
   {error&&<Notice kind="error">{error}</Notice>}
   {message&&<Notice kind="success">{message}</Notice>}
   {loading?<Loading/>:report&&<>
@@ -73,7 +126,7 @@ export default function ReportsPage(){
      <a className="btn secondary" href={`https://wa.me/?text=${encodeURIComponent(reportText(report))}`} target="_blank" rel="noopener noreferrer"><Share2 size={16}/> Compartilhar WhatsApp</a>
     </div>
    </Panel>
-   <p className="tiny-note">{report.message} A geração ocorre ao abrir a página; envio agendado ainda não está configurado.</p>
+   <p className="tiny-note">{report.message} O envio periódico por e-mail requer ativação e confirmação da sua conta, além do agendador configurado no Heroku.</p>
   </>}
  </>;
 }

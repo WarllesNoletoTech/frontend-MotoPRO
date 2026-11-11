@@ -24,7 +24,7 @@ type Insights={user:{id:string;name:string;email:string;phone:string|null;create
  goal:{weeklyTargetCents:number;monthlyTargetCents:number}|null;
  integration:{provider:string;remoteName:string;lastSyncAt:string|null}|null;
  subscription:{status:string;method:string;activeUntil:string|null}|null;courtesy:{activeUntil:string;lastGrantedAt:string;reason:string}|null};
-type SystemInfo={checkedAt:string;apiOnline:boolean;databaseConnected:boolean;uptimeSeconds:number;registeredTotal:number;registered7d:number;active24h:number;active7d:number;entries7d:number;entriesTotal:number;approvedPayments7d:number;approvedCents7d:number;note:string;recentUsers:{id:string;name:string;createdAt:string;lastActivityAt:string|null}[]};
+type SystemInfo={weeklyEmailConfigured:boolean;weeklyEmailSubscribers:number;weeklyEmailSent7d:number;weeklyEmailFailed7d:number;checkedAt:string;apiOnline:boolean;databaseConnected:boolean;uptimeSeconds:number;registeredTotal:number;registered7d:number;active24h:number;active7d:number;entries7d:number;entriesTotal:number;approvedPayments7d:number;approvedCents7d:number;note:string;recentUsers:{id:string;name:string;createdAt:string;lastActivityAt:string|null}[]};
 const tabs:{id:Tab;label:string;Icon:typeof Users}[]=[
  {id:'overview',label:'Visão geral',Icon:Wallet},{id:'users',label:'Motoboys',Icon:Users},
  {id:'subscriptions',label:'Assinaturas',Icon:ShieldCheck},{id:'payments',label:'Financeiro',Icon:Wallet},
@@ -225,11 +225,15 @@ export default function AdminPage(){
      {label:'Cadastros em 7 dias',value:String(system.registered7d),Icon:Plus},
      {label:'Lançamentos em 7 dias',value:String(system.entries7d),Icon:ClipboardList},
      {label:'Receita aprovada em 7 dias',value:formatMoney(system.approvedCents7d),Icon:Wallet},
-     {label:'Pagamentos aprovados em 7 dias',value:String(system.approvedPayments7d),Icon:CheckCircle2}
+     {label:'Pagamentos aprovados em 7 dias',value:String(system.approvedPayments7d),Icon:CheckCircle2},
+     {label:'E-mails semanais ativados',value:String(system.weeklyEmailSubscribers),Icon:Activity},
+     {label:'Relatórios enviados em 7 dias',value:String(system.weeklyEmailSent7d),Icon:CheckCircle2},
+     {label:'Falhas de envio em 7 dias',value:String(system.weeklyEmailFailed7d),Icon:History}
     ].map(({label,value,Icon})=><div className="admin-stat" key={label}><Icon size={18}/><small>{label}</small><strong>{value}</strong></div>)}</div>
     <div className="two-col">
      <Panel title="Operação" subtitle={`Conferido em ${date(system.checkedAt)}`}>
       <p>Motoboys cadastrados: <strong>{system.registeredTotal}</strong></p>
+      <p>Provedor de e-mail: <strong>{system.weeklyEmailConfigured?'Configurado':'Não configurado'}</strong> · Agendador: verificar Heroku Scheduler</p>
       <p>Lançamentos registrados: <strong>{system.entriesTotal}</strong></p>
       <p>Uptime deste processo da API: <strong>{Math.floor(system.uptimeSeconds/3600)}h {Math.floor((system.uptimeSeconds%3600)/60)}min</strong></p>
       <p className="admin-small">{system.note}</p>

@@ -22,12 +22,32 @@ jobs:
           repository: WarllesNoletoTech/backend-MotoPRO
           ref: feat/fase1-financeiro-admin-20261111
           path: MotoPRO_FASE1_COMPLETO/backend-MotoPRO
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validar backend, testes e build
+        working-directory: MotoPRO_FASE1_COMPLETO/backend-MotoPRO
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
+          npm run build
+      - name: Validar frontend, testes de tipos e build Vercel sem variável
+        working-directory: MotoPRO_FASE1_COMPLETO/frontend-MotoPRO
+        run: |
+          npm ci
+          npm run typecheck
+          npm run build
       - name: Limpar e adicionar instruções
         run: |
           rm -rf MotoPRO_FASE1_COMPLETO/frontend-MotoPRO/.git
           rm -rf MotoPRO_FASE1_COMPLETO/backend-MotoPRO/.git
           rm -rf MotoPRO_FASE1_COMPLETO/frontend-MotoPRO/node_modules
           rm -rf MotoPRO_FASE1_COMPLETO/backend-MotoPRO/node_modules
+          rm -rf MotoPRO_FASE1_COMPLETO/backend-MotoPRO/dist
+          rm -rf MotoPRO_FASE1_COMPLETO/frontend-MotoPRO/.next
+          rm -f MotoPRO_FASE1_COMPLETO/frontend-MotoPRO/tsconfig.tsbuildinfo
+          cp MotoPRO_FASE1_COMPLETO/backend-MotoPRO/CHECKLIST_HOMOLOGACAO_FASE1.md MotoPRO_FASE1_COMPLETO/CHECKLIST_HOMOLOGACAO_FASE1.md
           cat > MotoPRO_FASE1_COMPLETO/LEIA_PRIMEIRO.txt <<'EOF'
           MotoPRO - Fase 1 completa (frontend e backend)
           =================================================
@@ -41,8 +61,13 @@ jobs:
           3. Faça Redeploy do frontend depois de definir a variável.
           4. No Heroku, APP_ORIGIN deve ser a origem HTTPS real da Vercel.
           5. Homologue assinaturas, Rappidex, login e cortesias.
-          6. Execute npm ci, npm run typecheck e npm run build
-             em cada pasta antes de substituir a produção.
+          6. O CI já verifica typecheck, testes e build nas duas pastas.
+          7. Leia CHECKLIST_HOMOLOGACAO_FASE1.md antes de substituir produção.
+          8. Para envio semanal por e-mail, configure RESEND_API_KEY e
+             REPORTS_FROM_EMAIL no Heroku e agende no Heroku Scheduler
+             o comando npm run reports:weekly (preferência diária 12h UTC).
+             O motoboy deve autorizar e confirmar seu e-mail.
+             Sem essas variáveis, relatórios manuais seguem funcionando.
 
           ATENÇÃO: o build do frontend agora funciona sem API_INTERNAL_URL,
           mas as rotas /api/* retornam 503 enquanto ela não for configurada.
