@@ -27,7 +27,7 @@ export function dateLabel(date:string){
  return new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'short'}).format(new Date(y,m-1,d));
 }
 export type Entry={_id:string;type:'income'|'expense';category:string;description:string;amountCents:number;occurredOn:string;source:'manual'|'voice'|'integration'};
-export type Dashboard={period:{from:string;to:string};incomeCents:number;expenseCents:number;profitCents:number;byDay:{day:string;incomeCents:number;expenseCents:number}[];goal:{weeklyTargetCents:number}|null};
+export type Dashboard={period:{from:string;to:string};incomeCents:number;expenseCents:number;profitCents:number;byDay:{day:string;incomeCents:number;expenseCents:number}[];goal:{weeklyTargetCents:number;monthlyTargetCents?:number}|null;month?:{period:{from:string;to:string};incomeCents:number;expenseCents:number;profitCents:number;daysRemaining:number;targetCents:number;remainingCents:number;requiredDailyCents:number;progressPercent:number}};
 export const incomeCategories=[{value:'delivery',label:'Entregas'},{value:'bonus',label:'Gorjeta / bônus'},{value:'other',label:'Outros ganhos'}];
 export const expenseCategories=[{value:'fuel',label:'Combustível'},{value:'maintenance',label:'Manutenção'},{value:'food',label:'Alimentação'},{value:'other',label:'Outras despesas'}];
 export const categoryLabel=(key:string)=>[...incomeCategories,...expenseCategories].find(c=>c.value===key)?.label||key;
